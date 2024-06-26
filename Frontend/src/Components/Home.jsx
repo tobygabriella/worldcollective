@@ -5,7 +5,7 @@ import './Home.css';
 
 const Home = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const handleShopNowClick = () => {
     if (!isAuthenticated) {
@@ -17,9 +17,10 @@ const Home = () => {
     <div className="homeContainer">
       <header className="homeHeader">
         <div className="appName">World Collection</div>
-        {isAuthenticated && (
+        {isAuthenticated && user && (
           <div className="userProfile">
-            <img src="" alt="Profile" className="profilePicture" />
+            <h3>Hi @{user.username}</h3>
+            <img src={user.profilePicture || 'default-profile.png'} alt="Profile" className="profilePicture" />
           </div>
         )}
       </header>
@@ -34,3 +35,4 @@ const Home = () => {
 };
 
 export default Home;
+

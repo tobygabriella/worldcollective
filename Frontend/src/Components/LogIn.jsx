@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import './Login.css';
 
-const backendApi = import.meta.env.VITE_BACKEND_ADDRESS
+const backendApi = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const LogIn = () => {
   const [username, setUsername] = useState('');
@@ -20,17 +20,19 @@ const LogIn = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-       
+        credentials: 'include',
         body: JSON.stringify({ username, password }),
       });
 
       if (response.ok) {
-        login();
-        navigate('/'); // Redirect to home page
+        const { token, user } = await response.json();
+        login(user); 
+        navigate('/');
       } else {
         setError('Invalid credentials. Please try again.');
       }
     } catch (err) {
+      console.log(err);
       setError('Something went wrong. Please try again.');
     }
   };
