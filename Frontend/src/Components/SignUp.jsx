@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import './SignUp.css';
 
+const backendApi = import.meta.env.VITE_BACKEND_ADDRESS
+
 const Signup = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -12,7 +14,7 @@ const Signup = () => {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:3001/register', {
+      const response = await fetch(`${backendApi}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
