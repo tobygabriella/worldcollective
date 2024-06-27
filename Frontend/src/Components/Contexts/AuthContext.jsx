@@ -35,16 +35,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    try {
-      await fetch('http://localhost:3001/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
+      document.cookie = 'token=; Max-Age=0; path=/; domain=localhost';
       setIsAuthenticated(false);
       setUser(null);
-    } catch (error) {
-      console.error('Logout failed', error);
-    }
   };
 
   return (
