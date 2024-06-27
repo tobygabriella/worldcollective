@@ -57,14 +57,14 @@ app.post('/login', async (req, res) => {
 
         const token = jwt.sign({
             id: user.id,
-        }, secretKey, { expiresIn: '1h' });
+        }, secretKey, { expiresIn: '7d' });
 
 
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 3600000, // 1 hour
+            maxAge: 604800000, // 7 days
         });
 
         res.status(200).json({ token, user });
@@ -91,14 +91,6 @@ app.get('/protected', async (req, res) => {
     }
 });
 
-app.post('/logout', (req, res) => {
-    res.clearCookie('token', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-    });
-    res.status(200).json({ message: 'Logged out successfully' });
-});
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
