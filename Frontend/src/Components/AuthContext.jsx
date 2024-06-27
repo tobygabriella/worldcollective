@@ -33,9 +33,17 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
+  const logout = async () => {
+    try {
+      await fetch('http://localhost:3001/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      setIsAuthenticated(false);
+      setUser(null);
+    } catch (error) {
+      console.error('Logout failed', error);
+    }
   };
 
   return (
