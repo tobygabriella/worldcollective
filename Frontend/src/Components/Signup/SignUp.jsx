@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from './AuthContext';
-import './Login.css';
+import { Link } from 'react-router-dom';
+import './SignUp.css';
 
-const backendApi = import.meta.env.VITE_BACKEND_ADDRESS;
+const backendApi = import.meta.env.VITE_BACKEND_ADDRESS
 
-const LogIn = () => {
+const Signup = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${backendApi}/login`, {
+      const response = await fetch(`${backendApi}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -25,33 +24,30 @@ const LogIn = () => {
       });
 
       if (response.ok) {
-        const { token, user } = await response.json();
-        login(user); 
-        navigate('/');
+        navigate('/'); 
       } else {
-        setError('Invalid credentials. Please try again.');
+        setError('User already exists. Please try another username or log in');
       }
     } catch (err) {
-      console.log(err);
       setError('Something went wrong. Please try again.');
     }
   };
 
   return (
-    <div className="loginContainer">
-      <header className="loginHeader">
+    <div className="signupContainer">
+      <header className="signupHeader">
         <div className="appName">World Collection</div>
         <div className="authLinks">
           <a href="/login">Log in</a>
           <a href="/register">Sign up</a>
         </div>
       </header>
-      <div className="loginBody">
+      <div className="signupBody">
         <div className="circle"></div>
-        <div className="signupPrompt">
-          Don’t have an account? <a href="/register" className="signupLink">Sign up</a>
+        <div className="loginPrompt">
+          Already have an account? <Link to={"/login"} className="viewButton" >Log in</Link>
         </div>
-        <form className="loginForm" onSubmit={handleLogin}>
+        <form className="signupForm" onSubmit={handleSignup}>
           <input
             type="text"
             placeholder="Username"
@@ -67,11 +63,11 @@ const LogIn = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
           {error && <p className="error">{error}</p>}
-          <button type="submit" className="loginButton">Log in</button>
+          <button type="submit" className="signupButton">Sign up</button>
         </form>
       </div>
     </div>
   );
 };
 
-export default LogIn;
+export default Signup;

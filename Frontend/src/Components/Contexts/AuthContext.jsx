@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+const backendApi = import.meta.env.VITE_BACKEND_ADDRESS
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -9,14 +10,14 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch('http://localhost:3001/protected', {
+        const response = await fetch(`${backendApi}/protected`, {
           method: 'GET',
           credentials: 'include',
         });
         if (response.ok) {
           const data = await response.json();
           setIsAuthenticated(true);
-          setUser(data); // Use data directly
+          setUser(data);
         } else {
           setIsAuthenticated(false);
         }
@@ -33,9 +34,17 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
+  const logout = async () => {
+    try {
+      await fetch('http://localhost:3001/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      setIsAuthenticated(false);
+      setUser(null);
+    } catch (error) {
+      console.error('Logout failed', error);
+    }
   };
 
   return (
