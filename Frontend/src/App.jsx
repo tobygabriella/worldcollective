@@ -1,24 +1,27 @@
-import './App.css'
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { AuthProvider } from '/Users/tobygabriella/Desktop/MetaU Projects/world-collective/Frontend/src/Components/AuthContext.jsx';
-import Home from './Components/Home';
-import LogIn from './Components/LogIn';
-import SignUp from './Components/SignUp';
+import { AuthProvider } from '/Users/tobygabriella/Desktop/MetaU Projects/world-collective/Frontend/src/Components/Contexts/AuthContext.jsx';
 
+import './App.css';
+
+const Home = lazy(() => import('./Components/Home/Home.jsx'));
+const LogIn = lazy(() => import('./Components/Login/LogIn.jsx'));
+const SignUp = lazy(() => import('./Components/Signup/SignUp.jsx'));
 
 function App() {
-
   return (
     <Router>
       <AuthProvider>
-        <Routes>
-          <Route path="/login"element={<LogIn />} />
-          <Route path="/register" element={<SignUp />} />
-          <Route path="/" element={<Home />} /> 
-        </Routes>
+        <Suspense fallback={<div>Loading...</div>}>
+          <Routes>
+            <Route path="/login" element={<LogIn />} />
+            <Route path="/register" element={<SignUp />} />
+            <Route path="/" element={<Home />} />
+          </Routes>
+        </Suspense>
       </AuthProvider>
     </Router>
   );
 }
 
-export default App
+export default App;

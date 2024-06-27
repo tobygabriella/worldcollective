@@ -1,11 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../Contexts/AuthContext';
 import './Home.css';
 
 const Home = () => {
   const navigate = useNavigate();
+<<<<<<< HEAD:Frontend/src/Components/Home.jsx
   const { isAuthenticated, user, logout } = useAuth();
+>>>>>>> 9e262b0 (user_auth_done):Frontend/src/Components/Home/Home.jsx
 
   const handleShopNowClick = () => {
     if (!isAuthenticated) {
