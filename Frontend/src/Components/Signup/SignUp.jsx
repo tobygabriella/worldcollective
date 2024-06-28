@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../Contexts/AuthContext';
 import './SignUp.css';
+import AuthHeader from '../Headers/AuthHeader';
 
 const backendApi = import.meta.env.VITE_BACKEND_ADDRESS
 
@@ -26,7 +27,7 @@ const Signup = () => {
       });
 
       if (response.ok) {
-        const { user } = await response.json();
+        const user  = await response.json();
         login(user);
         navigate('/');
       } else {
@@ -40,11 +41,7 @@ const Signup = () => {
   return (
     <div className="signupContainer">
       <header className="signupHeader">
-        <div className="appName">World Collection</div>
-        <div className="authLinks">
-          <a href="/login">Log in</a>
-          <a href="/register">Sign up</a>
-        </div>
+        <AuthHeader />
       </header>
       <div className="signupBody">
         <div className="circle"></div>

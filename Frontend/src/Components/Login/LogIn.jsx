@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../Contexts/AuthContext';
 import './Login.css';
+import AuthHeader from '../Headers/AuthHeader';
 
 const backendApi = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -40,16 +42,12 @@ const LogIn = () => {
   return (
     <div className="loginContainer">
       <header className="loginHeader">
-        <div className="appName">World Collection</div>
-        <div className="authLinks">
-          <a href="/login">Log in</a>
-          <a href="/register">Sign up</a>
-        </div>
+      <AuthHeader />
       </header>
       <div className="loginBody">
         <div className="circle"></div>
         <div className="signupPrompt">
-          Don’t have an account? <a href="/register" className="signupLink">Sign up</a>
+          Don’t have an account?  <Link to={"/register"} className="signupLink" >Sign up</Link>
         </div>
         <form className="loginForm" onSubmit={handleLogin}>
           <input

@@ -67,6 +67,7 @@ body {
 .authLinks {
   display: flex;
   align-items: center;
+  margin-right: 30px;
 }
 
 .authLink, .logoutButton {

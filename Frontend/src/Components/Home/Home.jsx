@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../Contexts/AuthContext';
+import { Link } from 'react-router-dom';
 import './Home.css';
 
 const Home = () => {
@@ -37,8 +38,8 @@ const Home = () => {
             </>
           ) : (
             <>
-              <a href="/login" className="authLink">Log in</a>
-              <a href="/register" className="authLink">Sign up</a>
+              <Link to={"/login"} className="authLink" >Log in</Link>
+              <Link to={"/register"} className="authLink" >Sign up</Link>
             </>
           )}
         </div>
