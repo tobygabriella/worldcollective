@@ -8,7 +8,7 @@ const Home = lazy(() => import('./Components/Home/Home.jsx'));
 const LogIn = lazy(() => import('./Components/Login/LogIn.jsx'));
 const SignUp = lazy(() => import('./Components/Signup/SignUp.jsx'));
 const UserProfile = lazy(()=>import('./Components/UserProfile/UserProfile.jsx'))
-
+const CreateListing =lazy(()=>import('./Components/CreateListing/CreateListing.jsx'))
 
 function App() {
   return (
@@ -20,7 +20,7 @@ function App() {
             <Route path="/register" element={<SignUp />} />
             <Route path="/" element={<Home />} />
             <Route path ="/userProfile" element={<UserProfile/>} />
-
+            <Route path ="/createListing" element={<CreateListing/>} />
           </Routes>
         </Suspense>
       </AuthProvider>
