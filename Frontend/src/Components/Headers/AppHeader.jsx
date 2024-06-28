@@ -9,7 +9,6 @@ const AppHeader = () => {
 
   const handleLogout = () => {
     logout();
-
   };
 
   const showIcons = location.pathname === '/userProfile';

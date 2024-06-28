@@ -11,9 +11,9 @@ const InfoSection = ({ category, setCategory, brand, setBrand, condition, setCon
             <option value="" disabled>Select a category</option>
             <option value="clothing">Clothing</option>
             <option value="accessories">Accessories</option>
-            <option value="accessories">Furniture</option>
-            <option value="accessories">Beauty</option>
-            <option value="accessories">Appliances</option>
+            <option value="furniture">Furniture</option>
+            <option value="beauty">Beauty</option>
+            <option value="appliances">Appliances</option>
         </select>
       </label>
       <label>
