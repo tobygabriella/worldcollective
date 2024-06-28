@@ -7,6 +7,9 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const saltRounds = 14;
 const secretKey = process.env.JWT_SECRET;
@@ -19,6 +22,22 @@ app.use(cors({
     origin: 'http://localhost:5173',
     credentials: true,
 }));
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: 'uploads',
+      allowed_formats: ['jpeg', 'png'],
+    },
+  });
+
+const upload = multer({ storage: storage });
 
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
@@ -40,6 +59,31 @@ app.post('/register', async (req, res) => {
         res.status(500).json({ message: 'Something went wrong' });
     }
 });
+
+app.post('/listings', upload.array('images', 8), async (req, res) => {
+    const { title, description, price, category, condition, sellerId } = req.body;
+
+    const imageUrls = req.files.map(file => file.path);
+
+    try {
+        const newListing = await prisma.listing.create({
+            data: {
+                title,
+                description,
+                price: parseFloat(price),
+                category,
+                condition,
+                imageUrls,
+                sellerId: parseInt(sellerId),
+                status: 'active',
+            },
+        });
+        res.status(201).json(newListing);
+    } catch (error) {
+        res.status(500).json({ error: 'Something went wrong while creating the listing' });
+    }
+});
+
 
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
