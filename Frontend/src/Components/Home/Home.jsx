@@ -14,11 +14,6 @@ const Home = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
   return (
     <div className="homeContainer">
       <header className="homeHeader">

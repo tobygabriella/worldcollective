@@ -1,0 +1,113 @@
+.createListingContainer {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+  }
+  .body{
+    padding-top: 100px;
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .photosSection, .descriptionSection, .infoSection {
+    margin-bottom: 20px;
+  }
+
+  .photosSection h3, .descriptionSection h3, .infoSection h3 {
+    margin-bottom: 10px;
+  }
+
+  .photosSection p {
+    margin-bottom: 10px;
+  }
+
+  .deletePhotoButton {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .photosGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .photoSlot {
+    width: 100%;
+    padding-top: 100%;
+    position: relative;
+    border: 1px dashed #ccc;
+  }
+
+  .addPhotoLabel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: pointer;
+  }
+
+  .photoPlaceholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .photoPlaceholder i {
+    font-size: 24px;
+    margin-bottom: 5px;
+  }
+
+  .uploadedPhoto {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .photoInput {
+    display: none;
+  }
+
+  .descriptionSection textarea {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: none;
+  }
+
+  .infoSection label {
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .infoSection select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }

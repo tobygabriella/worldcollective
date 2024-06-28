@@ -38,7 +38,9 @@ const AppHeader = () => {
               <div className="icons">
                 <i className="fas fa-bell"></i>
                 <i className="fas fa-heart"></i>
-                <i className="fas fa-plus createListing"></i>
+                <Link to="/createListing" >
+                    <i className="fas fa-plus createListing"></i>
+                </Link>
               </div>
             )}
             <button onClick={handleLogout} className="logoutButton">
