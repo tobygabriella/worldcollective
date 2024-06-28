@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const backendApi = import.meta.env.VITE_BACKEND_ADDRESS
 const AuthContext = createContext();
@@ -6,6 +7,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -36,6 +38,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
       document.cookie = 'token=; Max-Age=0; path=/; domain=localhost';
+      navigate('/');
       setIsAuthenticated(false);
       setUser(null);
   };

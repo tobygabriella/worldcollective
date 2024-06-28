@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../Contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import AppHeader from '../Headers/AppHeader';
 import './Home.css';
 
 const Home = () => {
@@ -22,27 +23,7 @@ const Home = () => {
   return (
     <div className="homeContainer">
       <header className="homeHeader">
-        <h3 className="appName">WorldCollection</h3>
-        <div className="searchContainer">
-          <input type="text" className="searchInput" placeholder='Search for' />
-          <span className="searchIcon">&#128269;</span>
-        </div>
-        <div className="authLinks">
-          {isAuthenticated ? (
-            <>
-              <div className="userProfile">
-                <h3>Welcome {user.username} </h3>
-                <div className="circle"></div>
-                <button onClick={handleLogout} className="logoutButton">Logout</button>
-              </div>
-            </>
-          ) : (
-            <>
-              <Link to={"/login"} className="authLink" >Log in</Link>
-              <Link to={"/register"} className="authLink" >Sign up</Link>
-            </>
-          )}
-        </div>
+        <AppHeader />
       </header>
 
       <div className="homeBody">
