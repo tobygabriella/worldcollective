@@ -1,35 +1,31 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { Suspense, lazy } from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from '/Users/tobygabriella/Desktop/MetaU Projects/world-collective/Frontend/src/Components/Contexts/AuthContext.jsx';
+
+import './App.css';
+
+const Home = lazy(() => import('./Components/Home/Home.jsx'));
+const LogIn = lazy(() => import('./Components/Login/LogIn.jsx'));
+const SignUp = lazy(() => import('./Components/Signup/SignUp.jsx'));
+const UserProfile = lazy(()=>import('./Components/UserProfile/UserProfile.jsx'))
+const CreateListing = lazy(()=>import('./Components/CreateListing/CreateListing.jsx'))
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Router>
+      <AuthProvider>
+        <Suspense fallback={<div>Loading...</div>}>
+          <Routes>
+            <Route path="/login" element={<LogIn />} />
+            <Route path="/register" element={<SignUp />} />
+            <Route path="/" element={<Home />} />
+            <Route path ="/userProfile" element={<UserProfile/>} />
+            <Route path ="/createListing" element={<CreateListing/>} />
+          </Routes>
+        </Suspense>
+      </AuthProvider>
+    </Router>
+  );
 }
 
-export default App
+export default App;
