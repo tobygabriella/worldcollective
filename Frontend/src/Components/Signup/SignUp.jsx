@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../Contexts/AuthContext';
 import './SignUp.css';
 
 const backendApi = import.meta.env.VITE_BACKEND_ADDRESS
@@ -9,6 +10,7 @@ const Signup = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSignup = async (e) => {
@@ -24,6 +26,8 @@ const Signup = () => {
       });
 
       if (response.ok) {
+        const { user } = await response.json();
+        login(user);
         navigate('/');
       } else {
         setError('User already exists. Please try another username or log in');

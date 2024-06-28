@@ -25,7 +25,8 @@ body {
 
   .appName {
     font-size: 1.5em;
-    color: #000;
+    color: red;
+    float:right
   }
 
   .authLinks a {
