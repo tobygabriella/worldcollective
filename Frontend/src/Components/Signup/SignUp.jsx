@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../Contexts/AuthContext';
 import './SignUp.css';
+import AuthHeader from '../Headers/AuthHeader';
 
 const backendApi = import.meta.env.VITE_BACKEND_ADDRESS
 
@@ -9,6 +11,7 @@ const Signup = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSignup = async (e) => {
@@ -19,11 +22,15 @@ const Signup = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ username, password }),
       });
 
       if (response.ok) {
-        navigate('/'); // Redirect to login page after successful signup
+        const user  = await response.json();
+        login(user);
+
+        navigate('/');
       } else {
         setError('User already exists. Please try another username or log in');
       }
@@ -35,11 +42,7 @@ const Signup = () => {
   return (
     <div className="signupContainer">
       <header className="signupHeader">
-        <div className="appName">World Collection</div>
-        <div className="authLinks">
-          <a href="/login">Log in</a>
-          <a href="/register">Sign up</a>
-        </div>
+        <AuthHeader />
       </header>
       <div className="signupBody">
         <div className="circle"></div>

@@ -54,7 +54,7 @@ app.post('/login', async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid password' });
         }
-
+        else{
         const token = jwt.sign({
             id: user.id,
         }, secretKey, { expiresIn: '7d' });
@@ -68,6 +68,7 @@ app.post('/login', async (req, res) => {
         });
 
         res.status(200).json({ token, user });
+    }
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Something went wrong' });

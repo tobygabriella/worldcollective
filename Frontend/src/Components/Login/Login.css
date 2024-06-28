@@ -11,33 +11,6 @@ body {
     height: 100vh;
   }
 
-  .loginHeader {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 10px;
-    position: fixed;
-    top: 0;
-    right: 0;
-  }
-
-  .appName {
-    font-size: 1.5em;
-    color: #000;
-  }
-
-  .authLinks a {
-    margin-left: 20px;
-    text-decoration: none;
-    color: #000;
-  }
-
-  .authLinks a:hover {
-    text-decoration: underline;
-  }
-
   .loginBody {
     display: flex;
     flex-direction: column;

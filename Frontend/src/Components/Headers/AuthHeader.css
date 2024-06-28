@@ -1,0 +1,38 @@
+.authHeader {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 10px 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+  }
+
+  .appName {
+    font-size: 1.5em;
+    color: red;
+    margin-right: 20px;
+  }
+
+  .authLinks {
+    display: flex;
+    align-items: center;
+    margin-right: 30px;
+  }
+
+  .authLink, .logoutButton {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 10px;
+    border: 1px solid #000;
+    border-radius: 5px;
+  }
+
+  .authLink:hover, .logoutButton:hover {
+    background-color: #f0f0f0;
+  }

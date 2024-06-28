@@ -1,22 +1,25 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
+const backendApi = import.meta.env.VITE_BACKEND_ADDRESS
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch('http://localhost:3001/protected', {
+        const response = await fetch(`${backendApi}/protected`, {
           method: 'GET',
           credentials: 'include',
         });
         if (response.ok) {
           const data = await response.json();
           setIsAuthenticated(true);
-          setUser(data); // Use data directly
+          setUser(data);
         } else {
           setIsAuthenticated(false);
         }
@@ -34,16 +37,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    try {
-      await fetch('http://localhost:3001/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
+      document.cookie = 'token=; Max-Age=0; path=/; domain=localhost';
+      navigate('/');
       setIsAuthenticated(false);
       setUser(null);
-    } catch (error) {
-      console.error('Logout failed', error);
-    }
   };
 
   return (
