@@ -1,153 +1,58 @@
-/* Home.css */
-
-body {
-  font-family: Arial, sans-serif;
-
-}
-
 .homeContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
 
-/* Body styles */
-.homeBody {
-  width: 100%;
-  padding-top: 120px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+  .homeHeader {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    position: fixed;
+    top: 0;
+    right: 0;
+  }
 
-/* Category styles */
-.category {
-  display: flex;
-  justify-content: center;
-  background-color: white;
-  padding: 10px;
-  margin-bottom: 20px;
-}
+  .appName {
+    font-size: 1.5em;
+    color: #000;
+  }
 
-.categoryButton {
-  width: 50%;
-  text-align: center;
-  padding: 10px;
-  background-color: white;
-  cursor: pointer;
-  border: 1px solid #ccc;
-}
+  .userProfile {
+    display: flex;
+    align-items: center;
+  }
 
-.categoryButton:hover {
-  background-color: #f0f0f0;
-}
+  .profilePicture {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+  }
 
-/* Shop section styles */
-.shopSection {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: 20px;
-}
+  .homeBody {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    width: 100%;
+    padding-top: 100px;
+  }
 
-.shopItem {
-  width: 48%;
-  background-color: red;
-  text-align: center;
-  padding: 20px;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-color: #000;
-}
+  .shopNowButton {
+    padding: 10px 20px;
+    background-color: red;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
 
-.shopNowButton {
-  margin-top: 10px;
-  padding: 10px;
-  background-color: white;
-  border: none;
-  cursor: pointer;
-  color: red;
-  border-radius: 5px;
-}
-
-.shopNowButton:hover {
-  background-color: #f0f0f0;
-}
-
-/* Price section styles */
-.priceSection {
-  text-align: center;
-  margin-bottom: 20px;
-  width:100%;
-  /* margin-bottom: 20px; */
-}
-
-.priceItems {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-  width:100%;
-}
-
-.priceItem {
-  flex: 1;
-  margin: 0 10px;
-  padding: 20px;
-  background: linear-gradient(to right, #ff0000, #f0c40f);
-  color: white;
-  text-align: center;
-  font-size: 18px;
-  font-weight: bold;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100px;
-  transition: transform 0.3s ease;
-}
-
-.priceItem:hover {
-  transform: scale(1.05);
-  background: linear-gradient(to right, #f0c40f, #ff0000);
-}
-
-.styleSection {
-  text-align: center;
-  margin-bottom: 20px;
-  width:100%;
-}
-
-.styleItems {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-  width: 100%;
-}
-
-.styleItem {
-  margin: 0 10px;
-  padding: 20px;
-  width: 100%;
-  background-color: red;
-  height: 100px;
-  border-radius: 5px;
-}
-
-.styleItem:hover {
-  transform: scale(1.05);
-
-}
-
-.logoutButton{
-  margin-top: 10px;
-  padding: 10px;
-  background-color: white;
-  border: none;
-  cursor: pointer;
-  color: black;
-  border-radius: 5px;
-}
+  .shopNowButton:hover {
+    background-color: darkred;
+  }

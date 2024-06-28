@@ -29,6 +29,7 @@ const Signup = () => {
       if (response.ok) {
         const user  = await response.json();
         login(user);
+
         navigate('/');
       } else {
         setError('User already exists. Please try another username or log in');

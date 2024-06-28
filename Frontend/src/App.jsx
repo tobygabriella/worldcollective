@@ -9,6 +9,7 @@ const LogIn = lazy(() => import('./Components/Login/LogIn.jsx'));
 const SignUp = lazy(() => import('./Components/Signup/SignUp.jsx'));
 const UserProfile = lazy(()=>import('./Components/UserProfile/UserProfile.jsx'))
 
+
 function App() {
   return (
     <Router>
@@ -19,6 +20,7 @@ function App() {
             <Route path="/register" element={<SignUp />} />
             <Route path="/" element={<Home />} />
             <Route path ="/userProfile" element={<UserProfile/>} />
+
           </Routes>
         </Suspense>
       </AuthProvider>
