@@ -56,14 +56,14 @@ const LogIn = () => {
             className="inputField"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-          />
+            required/>
           <input
             type="password"
             placeholder="Password"
             className="inputField"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-          />
+            required/>
           {error && <p className="error">{error}</p>}
           <button type="submit" className="loginButton">Log in</button>
         </form>
