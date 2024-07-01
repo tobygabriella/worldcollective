@@ -78,6 +78,29 @@ app.post('/listings',  upload.array('images', 8), async (req, res) => {
     }
 });
 
+app.get('/listings/user', async (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(401).json({ message: 'No token, authorization denied' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, secretKey);
+        const userId = decoded.id;
+
+        const userListings = await prisma.listing.findMany({
+            where: {
+                sellerId: userId,
+            },
+        });
+
+        res.status(200).json(userListings);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Something went wrong while fetching the listings' });
+    }
+});
+
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     try {
