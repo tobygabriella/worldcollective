@@ -66,8 +66,9 @@ const CreateListing = () => {
         setSuccess('');
       }
     } catch (err) {
+    console.error(err);
+
       console.error(err);
-      console.error('Fetch error:', err);
       setError('Something went wrong. Please try again.');
       setSuccess('');
     }

@@ -46,7 +46,7 @@ const upload = multer({ storage: storage });
 app.post('/listings',  upload.array('images', 8), async (req, res) => {
     const token = req.cookies.token;
     if (!token) {
-        return res.status(401).json({ message: 'No token, authorization denied' });
+        return res.status(401).json({ error: 'No token, authorization denied' });
     }
 
     try {
