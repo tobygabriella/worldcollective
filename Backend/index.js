@@ -10,12 +10,16 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const bodyParser = require('body-parser');
 
 const saltRounds = 14;
 const secretKey = process.env.JWT_SECRET;
 const app = express();
 const port = 3002;
 
+app.use(bodyParser.json())
+
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.json());
 app.use(cors({
@@ -39,7 +43,7 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage: storage });
 
-app.post('/listings', upload.array('images', 8), async (req, res) => {
+app.post('/listings',  upload.array('images', 8), async (req, res) => {
     const token = req.cookies.token;
     if (!token) {
         return res.status(401).json({ message: 'No token, authorization denied' });
@@ -50,6 +54,9 @@ app.post('/listings', upload.array('images', 8), async (req, res) => {
         const sellerId = decoded.id;
 
         const { title, description, price, category, condition } = req.body;
+        console.log(req.body);
+        console.log(req.files);
+        console.log(req);
         const imageUrls = req.files.map(file => file.path);
 
         const newListing = await prisma.listing.create({

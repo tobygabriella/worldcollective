@@ -1,7 +1,7 @@
 import React from 'react';
 
 
-const InfoSection = ({ category, setCategory, brand, setBrand, condition, setCondition }) => {
+const InfoSection = ({ category, setCategory, brand, setBrand, condition, setCondition, price, setPrice}) => {
   return (
     <div className="infoSection">
       <h3>Info</h3>
@@ -31,6 +31,15 @@ const InfoSection = ({ category, setCategory, brand, setBrand, condition, setCon
           <option value="new">New</option>
           <option value="used">Used</option>
         </select>
+      </label>
+      <label>
+        Price
+        <input
+          type="number"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          required
+        />
       </label>
     </div>
   );

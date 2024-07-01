@@ -1,10 +1,19 @@
 import React from 'react';
 
 
-const DescriptionSection = ({ description, setDescription }) => {
+const DescriptionSection = ({title, setTitle, description, setDescription }) => {
   return (
     <div className="descriptionSection">
       <h3>Description</h3>
+      <label>
+        Title
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
+      </label>
       <textarea
         placeholder="e.g. small grey Nike t-shirt, only worn a few times"
         value={description}
