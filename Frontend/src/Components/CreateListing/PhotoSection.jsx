@@ -1,5 +1,4 @@
-import React from 'react';
-
+import React from "react";
 
 const PhotoSection = ({ photos, handlePhotoUpload, handlePhotoDelete }) => {
   return (
@@ -16,10 +15,12 @@ const PhotoSection = ({ photos, handlePhotoUpload, handlePhotoDelete }) => {
                   <img
                     src={URL.createObjectURL(photos[index])}
                     alt="Uploaded"
-                    className="uploadedPhoto"/>
+                    className="uploadedPhoto"
+                  />
                   <button
                     className="deletePhotoButton"
-                    onClick={() => handlePhotoDelete(index)}>
+                    onClick={() => handlePhotoDelete(index)}
+                  >
                     &times;
                   </button>
                 </div>
@@ -29,7 +30,8 @@ const PhotoSection = ({ photos, handlePhotoUpload, handlePhotoDelete }) => {
                     type="file"
                     accept="image/jpeg, image/png"
                     onChange={handlePhotoUpload}
-                    className="photoInput"/>
+                    className="photoInput"
+                  />
                   <div className="photoPlaceholder">
                     <i className="fas fa-camera"></i>
                     <span>Add a photo</span>
@@ -39,7 +41,7 @@ const PhotoSection = ({ photos, handlePhotoUpload, handlePhotoDelete }) => {
             </div>
           ))}
       </div>
-      Add photos from a phone 
+      Add photos from a phone
     </div>
   );
 };

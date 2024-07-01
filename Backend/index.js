@@ -42,7 +42,6 @@ const storage = new CloudinaryStorage({
   });
 
 const upload = multer({ storage: storage });
-
 app.post('/listings',  upload.array('images', 8), async (req, res) => {
     const token = req.cookies.token;
     if (!token) {
@@ -54,9 +53,6 @@ app.post('/listings',  upload.array('images', 8), async (req, res) => {
         const sellerId = decoded.id;
 
         const { title, description, price, category, condition } = req.body;
-        console.log(req.body);
-        console.log(req.files);
-        console.log(req);
         const imageUrls = req.files.map(file => file.path);
 
         const newListing = await prisma.listing.create({
@@ -83,17 +79,14 @@ app.get('/listings/user', async (req, res) => {
     if (!token) {
         return res.status(401).json({ message: 'No token, authorization denied' });
     }
-
     try {
         const decoded = jwt.verify(token, secretKey);
         const userId = decoded.id;
-
         const userListings = await prisma.listing.findMany({
             where: {
                 sellerId: userId,
             },
         });
-
         res.status(200).json(userListings);
     } catch (error) {
         console.error(error);
@@ -103,7 +96,7 @@ app.get('/listings/user', async (req, res) => {
 
 app.get('/listings/:id', async (req, res) => {
     const { id } = req.params;
-    
+
     try {
         const listing = await prisma.listing.findUnique({
             where: { id: parseInt(id) },
@@ -111,7 +104,6 @@ app.get('/listings/:id', async (req, res) => {
                 seller: true,
             }
         });
-
         if (!listing) {
             return res.status(404).json({ message: 'Listing not found' });
         }

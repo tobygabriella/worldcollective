@@ -1,7 +1,11 @@
-import React from 'react';
+import React from "react";
 
-
-const DescriptionSection = ({title, setTitle, description, setDescription }) => {
+const DescriptionSection = ({
+  title,
+  setTitle,
+  description,
+  setDescription,
+}) => {
   return (
     <div className="descriptionSection">
       <h3>Description</h3>

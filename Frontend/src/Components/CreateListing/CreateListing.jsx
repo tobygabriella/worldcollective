@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
-import './CreateListing.css';
-import AppHeader from '../Headers/AppHeader';
-import PhotoSection from './PhotoSection';
-import DescriptionSection from './DescriptionSection';
-import InfoSection from './InfoSection';
+import React, { useState } from "react";
+import "./CreateListing.css";
+import AppHeader from "../Headers/AppHeader";
+import PhotoSection from "./PhotoSection";
+import DescriptionSection from "./DescriptionSection";
+import InfoSection from "./InfoSection";
 
-const backendApi = import.meta.env.VITE_BACKEND_ADDRESS;
+const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const CreateListing = () => {
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [brand, setBrand] = useState('');
-  const [condition, setCondition] = useState('');
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
+  const [brand, setBrand] = useState("");
+  const [condition, setCondition] = useState("");
   const [photos, setPhotos] = useState([]);
-  const [title, setTitle] = useState('');
-  const [price, setPrice] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [title, setTitle] = useState("");
+  const [price, setPrice] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handlePhotoUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -31,46 +31,38 @@ const CreateListing = () => {
     e.preventDefault();
 
     const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('price', price);
-    formData.append('category', category);
-    formData.append('condition', condition);
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("price", price);
+    formData.append("category", category);
+    formData.append("condition", condition);
     photos.forEach((photo) => {
-      formData.append('images', photo);
+      formData.append("images", photo);
     });
 
-    for (const value of formData.values()) {
-        console.log(value);
-      }
-    console.log(title, description, price, category, condition, photos)
-
     try {
-      const response = await fetch(`${backendApi}/listings`, {
-        method: 'POST',
-        credentials: 'include',
+      const response = await fetch(`${API_KEY}/listings`, {
+        method: "POST",
+        credentials: "include",
         body: formData,
         headers: {
-            "Accept": '*/*',
-            "Authorization": `Bearer ${localStorage.getItem("token")}`
-          }
+          Accept: "*/*",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
-
       if (response.ok) {
-        setSuccess('Listing created successfully!');
-        setError('');
+        setSuccess("Listing created successfully!");
+        setError("");
       } else {
         const errMessage = await response.json();
-        console.error('Error response:', errMessage);
+        console.error("Error response:", errMessage);
         setError(errMessage.error);
-        setSuccess('');
+        setSuccess("");
       }
     } catch (err) {
-    console.error(err);
-
       console.error(err);
-      setError('Something went wrong. Please try again.');
-      setSuccess('');
+      setError("Something went wrong. Please try again.");
+      setSuccess("");
     }
   };
 
@@ -101,7 +93,9 @@ const CreateListing = () => {
             price={price}
             setPrice={setPrice}
           />
-          <button type="submit" className="submitButton">Create Listing</button>
+          <button type="submit" className="submitButton">
+            Create Listing
+          </button>
         </form>
         {error && <p className="error">{error}</p>}
         {success && <p className="success">{success}</p>}
