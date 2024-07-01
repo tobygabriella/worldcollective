@@ -24,16 +24,7 @@ model User {
   listings       Listing[]
   likes          Like[]
   notifications  Notification[]
-  tokens Token[]
   }
-
-model Token {
- id Int @id @default(autoincrement())
- token String
- userId Int
- user User @relation(fields: [userId], references: [id])
- createdAt DateTime @default(now())
- }
 
  model Listing {
   id          Int       @id @default(autoincrement())
