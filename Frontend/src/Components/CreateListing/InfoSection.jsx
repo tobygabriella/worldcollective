@@ -1,6 +1,5 @@
 import React from 'react';
 
-
 const InfoSection = ({ category, setCategory, brand, setBrand, condition, setCondition, price, setPrice}) => {
   return (
     <div className="infoSection">

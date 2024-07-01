@@ -101,6 +101,28 @@ app.get('/listings/user', async (req, res) => {
     }
 });
 
+app.get('/listings/:id', async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        const listing = await prisma.listing.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                seller: true,
+            }
+        });
+
+        if (!listing) {
+            return res.status(404).json({ message: 'Listing not found' });
+        }
+
+        res.status(200).json(listing);
+    } catch (error) {
+        console.error('Error fetching listing:', error);
+        res.status(500).json({ error: 'Something went wrong while fetching the listing' });
+    }
+});
+
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     try {
