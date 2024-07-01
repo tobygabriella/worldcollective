@@ -14,7 +14,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const saltRounds = 14;
 const secretKey = process.env.JWT_SECRET;
 const app = express();
-const port = 3001;
+const port = 3002;
 
 app.use(cookieParser());
 app.use(express.json());
@@ -39,6 +39,38 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage: storage });
 
+app.post('/listings', upload.array('images', 8), async (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(401).json({ message: 'No token, authorization denied' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, secretKey);
+        const sellerId = decoded.id;
+
+        const { title, description, price, category, condition } = req.body;
+        const imageUrls = req.files.map(file => file.path);
+
+        const newListing = await prisma.listing.create({
+            data: {
+                title,
+                description,
+                price: parseFloat(price),
+                category,
+                condition,
+                imageUrls,
+                sellerId: parseInt(sellerId),
+                status: 'active',
+            },
+        });
+        res.status(201).json(newListing);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Something went wrong while creating the listing' });
+    }
+});
+
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -57,30 +89,6 @@ app.post('/register', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Something went wrong' });
-    }
-});
-
-app.post('/listings', upload.array('images', 8), async (req, res) => {
-    const { title, description, price, category, condition, sellerId } = req.body;
-
-    const imageUrls = req.files.map(file => file.path);
-
-    try {
-        const newListing = await prisma.listing.create({
-            data: {
-                title,
-                description,
-                price: parseFloat(price),
-                category,
-                condition,
-                imageUrls,
-                sellerId: parseInt(sellerId),
-                status: 'active',
-            },
-        });
-        res.status(201).json(newListing);
-    } catch (error) {
-        res.status(500).json({ error: 'Something went wrong while creating the listing' });
     }
 });
 
