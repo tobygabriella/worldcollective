@@ -26,6 +26,26 @@ const ListingDetails = () => {
     fetchListing();
   }, [id]);
 
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`${API_KEY}/listings/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (response.ok) {
+        navigate("/userProfile");
+      } else {
+        console.error("Failed to delete listing");
+      }
+    } catch (error) {
+      console.error("Error deleting listing:", error);
+    }
+  };
+
   return (
     <div className="listingDetailsContainer">
       <AppHeader />
@@ -48,7 +68,9 @@ const ListingDetails = () => {
             <strong>Condition:</strong> {listing.condition}
           </p>
           {user?.id === listing.sellerId && (
-            <div className="listingActions"></div>
+            <div className="listingActions">
+              <button onClick={handleDelete}>Delete Listing</button>
+            </div>
           )}
         </div>
       ) : (
