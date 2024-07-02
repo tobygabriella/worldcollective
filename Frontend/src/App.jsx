@@ -14,6 +14,9 @@ const CreateListing = lazy(() =>
   import("./Components/CreateListing/CreateListing.jsx")
 );
 const ListingDetails = lazy(() => import("./Components/ListingDetails/ListingDetails.jsx"));
+const FilteredListing = lazy(() =>
+  import("./Components/FilteredListing/FilteredListing.jsx")
+);
 
 function App() {
   return (
@@ -27,6 +30,10 @@ function App() {
             <Route path="/userProfile" element={<UserProfile />} />
             <Route path="/createListing" element={<CreateListing />} />
             <Route path="/listings/:id" element={<ListingDetails />} />
+            <Route
+              path="/listings/:filterType/:filterValue"
+              element={<FilteredListing />}
+            />
           </Routes>
         </Suspense>
       </AuthProvider>

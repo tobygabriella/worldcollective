@@ -8,9 +8,12 @@ const Home = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout} = useAuth();
 
-  const handleShopNowClick = () => {
+  const handleShopNowClick = (category) => {
     if (!isAuthenticated) {
       navigate('/login');
+    }
+    else {
+      navigate(`/listings/category/${category}`);
     }
   };
 
@@ -24,11 +27,21 @@ const Home = () => {
         <div className="shopSection">
           <div className="shopItem">
             <h2>Womenswear</h2>
-            <button onClick={handleShopNowClick} className="shopNowButton">Shop now</button>
+            <button
+              onClick={() => handleShopNowClick("womenswear")}
+              className="shopNowButton"
+            >
+              Shop now
+            </button>
           </div>
           <div className="shopItem">
             <h2>Menswear</h2>
-            <button onClick={handleShopNowClick} className="shopNowButton">Shop now</button>
+            <button
+              onClick={() => handleShopNowClick("menswear")}
+              className="shopNowButton"
+            >
+              Shop now
+            </button>
           </div>
         </div>
 
