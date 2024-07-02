@@ -44,9 +44,9 @@ const Home = () => {
         <div className="styleSection">
           <h3>Shop by Style</h3>
           <div className="styleItems">
-            <div className="styleItem"></div>
-            <div className="styleItem"></div>
-            <div className="styleItem"></div>
+            <div className="styleItem">Dresses</div>
+            <div className="styleItem">Pants</div>
+            <div className="styleItem">T-shirts</div>
           </div>
         </div>
       </div>

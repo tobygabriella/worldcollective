@@ -154,6 +154,21 @@ app.delete("/listings/:id", verifyToken, async (req, res) => {
   }
 });
 
+app.get("/listings/category/:category", async (req, res) => {
+  const { category } = req.params;
+  try {
+    const listings = await prisma.listing.findMany({
+      where: { category },
+    });
+    res.status(200).json(listings);
+  } catch (error) {
+    console.error("Error fetching listings by category:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching the listings" });
+  }
+});
+
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
   try {
