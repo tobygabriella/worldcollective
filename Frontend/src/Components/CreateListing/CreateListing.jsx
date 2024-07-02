@@ -16,6 +16,7 @@ const CreateListing = () => {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [error, setError] = useState("");
+  const [subcategory, setSubcategory] = useState("");
   const [success, setSuccess] = useState("");
 
   const handlePhotoUpload = (e) => {
@@ -35,6 +36,7 @@ const CreateListing = () => {
     formData.append("description", description);
     formData.append("price", price);
     formData.append("category", category);
+    formData.append("subcategory", subcategory);
     formData.append("condition", condition);
     photos.forEach((photo) => {
       formData.append("images", photo);
@@ -86,6 +88,8 @@ const CreateListing = () => {
           <InfoSection
             category={category}
             setCategory={setCategory}
+            subcategory={subcategory}
+            setSubcategory={setSubcategory}
             brand={brand}
             setBrand={setBrand}
             condition={condition}

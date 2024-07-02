@@ -32,7 +32,9 @@ model User {
   description String
   price       Decimal
   category    String
+  subcategory String?
   condition   String
+  brand       String?
   imageUrls   String[]
   sellerId    Int
   seller      User      @relation(fields: [sellerId], references: [id])

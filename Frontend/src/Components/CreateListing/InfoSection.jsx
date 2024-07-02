@@ -1,4 +1,5 @@
 import React from "react";
+import { Categories, Subcategories, Conditions, Brands } from "../Enums/Enums.js";
 
 const InfoSection = ({
   category,
@@ -9,6 +10,8 @@ const InfoSection = ({
   setCondition,
   price,
   setPrice,
+  subcategory,
+  setSubcategory,
 }) => {
   return (
     <div className="infoSection">
@@ -19,23 +22,47 @@ const InfoSection = ({
           <option value="" disabled>
             Select a category
           </option>
-          <option value="clothing">Clothing</option>
-          <option value="accessories">Accessories</option>
-          <option value="furniture">Furniture</option>
-          <option value="beauty">Beauty</option>
-          <option value="appliances">Appliances</option>
+          {Object.values(Categories).map((cat) => (
+            <option key={cat} value={cat}>
+              {cat.charAt(0).toUpperCase() + cat.slice(1)}
+            </option>
+          ))}
         </select>
       </label>
+
+      {category && (
+        <label>
+          Subcategory
+          <select
+            value={subcategory}
+            onChange={(e) => setSubcategory(e.target.value)}
+          >
+            <option value="" disabled>
+              Select a subcategory
+            </option>
+            {Subcategories[category.toUpperCase()].map((subcat) => (
+              <option key={subcat} value={subcat}>
+                {subcat.charAt(0).toUpperCase() + subcat.slice(1)}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
       <label>
         Brand
         <select value={brand} onChange={(e) => setBrand(e.target.value)}>
           <option value="" disabled>
             Select a brand
           </option>
-          <option value="nike">Nike</option>
-          <option value="adidas">Adidas</option>
+          {Brands.map((br) => (
+            <option key={br} value={br}>
+              {br}
+            </option>
+          ))}
         </select>
       </label>
+
       <label>
         Condition
         <select
@@ -45,8 +72,11 @@ const InfoSection = ({
           <option value="" disabled>
             Select a condition
           </option>
-          <option value="new">New</option>
-          <option value="used">Used</option>
+          {Object.values(Conditions).map((cond) => (
+            <option key={cond} value={cond}>
+              {cond}
+            </option>
+          ))}
         </select>
       </label>
       <label>
