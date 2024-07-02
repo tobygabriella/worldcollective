@@ -52,6 +52,7 @@ const UserProfile = () => {
           {listings.map((listing) => (
             <ListingItem
               key={listing.id}
+              id={listing.id}
               title={listing.title}
               price={listing.price}
               imageUrls={listing.imageUrls}
