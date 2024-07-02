@@ -126,6 +126,34 @@ app.get("/listings/:id", async (req, res) => {
   }
 });
 
+app.delete("/listings/:id", verifyToken, async (req, res) => {
+  const { id } = req.params;
+  const sellerId = req.user.id;
+
+  try {
+    const listing = await prisma.listing.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (listing.sellerId !== sellerId) {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to delete this listing" });
+    }
+
+    await prisma.listing.delete({
+      where: { id: parseInt(id) },
+    });
+
+    res.status(200).json({ message: "Listing deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while deleting the listing" });
+  }
+});
+
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
   try {
