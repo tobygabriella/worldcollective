@@ -24,25 +24,25 @@ const AppHeader = () => {
         <span className="searchIcon">&#128269;</span>
       </div>
       <div className="authLinks">
-      {isAuthenticated ? (
+        {isAuthenticated ? (
           <>
             {showWelcome && (
               <div className="userProfile">
                 <h3>Welcome {user.username}</h3>
-                <Link to="/userProfile" className="circleLink">
-                  <div className="circle"></div>
-                </Link>
               </div>
             )}
             {showIcons && (
               <div className="icons">
                 <i className="fas fa-bell"></i>
                 <i className="fas fa-heart"></i>
-                <Link to="/createListing" >
-                    <i className="fas fa-plus createListing"></i>
+                <Link to="/createListing">
+                  <i className="fas fa-plus createListing"></i>
                 </Link>
               </div>
             )}
+            <Link to="/userProfile" className="circleLink">
+              <div className="circle"></div>
+            </Link>
             <button onClick={handleLogout} className="logoutButton">
               Logout
             </button>

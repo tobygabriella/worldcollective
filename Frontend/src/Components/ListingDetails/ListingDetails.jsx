@@ -51,27 +51,45 @@ const ListingDetails = () => {
       <AppHeader />
       {listing ? (
         <div className="listingDetails">
-          <img
-            src={listing.imageUrls[0]}
-            alt={listing.title}
-            className="listingImage"
-          />
-          <h2>{listing.title}</h2>
-          <p>{listing.description}</p>
-          <p>
-            <strong>Price:</strong> ${listing.price}
-          </p>
-          <p>
-            <strong>Category:</strong> {listing.category}
-          </p>
-          <p>
-            <strong>Condition:</strong> {listing.condition}
-          </p>
-          {user?.id === listing.sellerId && (
-            <div className="listingActions">
-              <button onClick={handleDelete}>Delete Listing</button>
+          <div className="listingImages">
+            {listing.imageUrls.map((url, index) => (
+              <img
+                key={index}
+                src={url}
+                alt={listing.title}
+                className="listingImage"
+              />
+            ))}
+          </div>
+          <div className="listingInfo">
+            <h2>
+              <strong>${listing.price}</strong>
+            </h2>
+            <h2>{listing.title}</h2>
+            <p>{listing.description}</p>
+            <p>
+              <strong>Category:</strong> {listing.category}
+            </p>
+            <p>
+              <strong>Condition:</strong> {listing.condition}
+            </p>
+            {user?.id === listing.sellerId && (
+              <div className="listingActions">
+                <button>Edit Listing</button>
+                <button onClick={handleDelete}>Delete Listing</button>
+              </div>
+            )}
+            <div className="sellerInfo">
+              <img
+                src={user?.profilePicture || "default-profile.png"}
+                alt={user?.username}
+                className="sellerProfilePicture"
+              />
+              <div>
+                <p>{user?.username}</p>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       ) : (
         <p>Loading...</p>
