@@ -28,13 +28,14 @@ const LogIn = () => {
 
       if (response.ok) {
         const { token, user } = await response.json();
+        localStorage.setItem("token",token)
         login(user);
         navigate('/');
       } else {
         setError('Invalid credentials. Please try again.');
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
       setError('Something went wrong. Please try again.');
     }
   };
