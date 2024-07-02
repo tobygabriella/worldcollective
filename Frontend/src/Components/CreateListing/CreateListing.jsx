@@ -8,15 +8,17 @@ import InfoSection from "./InfoSection";
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const CreateListing = () => {
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [brand, setBrand] = useState("");
-  const [condition, setCondition] = useState("");
+  const [formInput, setFormInput] = useState({
+    title: "",
+    description: "",
+    category: "",
+    subcategory: "",
+    brand: "",
+    condition: "",
+    price: "",
+  });
   const [photos, setPhotos] = useState([]);
-  const [title, setTitle] = useState("");
-  const [price, setPrice] = useState("");
   const [error, setError] = useState("");
-  const [subcategory, setSubcategory] = useState("");
   const [success, setSuccess] = useState("");
 
   const handlePhotoUpload = (e) => {
@@ -32,12 +34,12 @@ const CreateListing = () => {
     e.preventDefault();
 
     const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("price", price);
-    formData.append("category", category);
-    formData.append("subcategory", subcategory);
-    formData.append("condition", condition);
+    formData.append("title", formInput.title);
+    formData.append("description", formInput.description);
+    formData.append("price", formInput.price);
+    formData.append("category", formInput.category);
+    formData.append("subcategory", formInput.subcategory);
+    formData.append("condition", formInput.condition);
     photos.forEach((photo) => {
       formData.append("images", photo);
     });
@@ -80,22 +82,30 @@ const CreateListing = () => {
             handlePhotoDelete={handlePhotoDelete}
           />
           <DescriptionSection
-            title={title}
-            setTitle={setTitle}
-            description={description}
-            setDescription={setDescription}
+            title={formInput.title}
+            setTitle={(value) => setFormInput({ ...formInput, title: value })}
+            description={formInput.description}
+            setDescription={(value) =>
+              setFormInput({ ...formInput, description: value })
+            }
           />
           <InfoSection
-            category={category}
-            setCategory={setCategory}
-            subcategory={subcategory}
-            setSubcategory={setSubcategory}
-            brand={brand}
-            setBrand={setBrand}
-            condition={condition}
-            setCondition={setCondition}
-            price={price}
-            setPrice={setPrice}
+            category={formInput.category}
+            setCategory={(value) =>
+              setFormInput({ ...formInput, category: value })
+            }
+            subcategory={formInput.subcategory}
+            setSubcategory={(value) =>
+              setFormInput({ ...formInput, subcategory: value })
+            }
+            brand={formInput.brand}
+            setBrand={(value) => setFormInput({ ...formInput, brand: value })}
+            condition={formInput.condition}
+            setCondition={(value) =>
+              setFormInput({ ...formInput, condition: value })
+            }
+            price={formInput.price}
+            setPrice={(value) => setFormInput({ ...formInput, price: value })}
           />
           <button type="submit" className="submitButton">
             Create Listing
