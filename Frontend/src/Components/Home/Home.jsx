@@ -17,6 +17,23 @@ const Home = () => {
     }
   };
 
+  const handlePriceClick = (maxPrice) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+    else {
+      navigate(`/listings/price/${maxPrice}`);
+    }
+  };
+
+  const handleStyleClick = (subcategory) => {
+      if (!isAuthenticated) {
+        navigate("/login");
+      } else {
+        navigate(`/listings/subcategory/${subcategory}`);
+      }
+  };
+
   return (
     <div className="homeContainer">
       <header className="homeHeader">
@@ -48,18 +65,39 @@ const Home = () => {
         <div className="priceSection">
           <h3>Shop by Price</h3>
           <div className="priceItems">
-            <div className="priceItem">Under $10</div>
-            <div className="priceItem">Under $20</div>
-            <div className="priceItem">Under $50</div>
+            <div className="priceItem" onClick={() => handlePriceClick(10)}>
+              Under $10
+            </div>
+            <div className="priceItem" onClick={() => handlePriceClick(20)}>
+              Under $20
+            </div>
+            <div className="priceItem" onClick={() => handlePriceClick(50)}>
+              Under $50
+            </div>
           </div>
         </div>
 
         <div className="styleSection">
           <h3>Shop by Style</h3>
           <div className="styleItems">
-            <div className="styleItem">Dresses</div>
-            <div className="styleItem">Pants</div>
-            <div className="styleItem">T-shirts</div>
+            <div
+              className="styleItem"
+              onClick={() => handleStyleClick("dresses")}
+            >
+              Dresses
+            </div>
+            <div
+              className="styleItem"
+              onClick={() => handleStyleClick("pants")}
+            >
+              Pants
+            </div>
+            <div
+              className="styleItem"
+              onClick={() => handleStyleClick("tshirts")}
+            >
+              T-shirts
+            </div>
           </div>
         </div>
       </div>

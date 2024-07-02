@@ -4,16 +4,37 @@ export const Categories = {
 };
 
 export const Subcategories = {
-  WOMENSWEAR: ["tops", "tshirts", "jeans", "dresses", "skirts"],
-  MENSWEAR: ["tops", "tshirts", "jeans", "trousers", "shorts"],
+  TSHIRT: "tshirt",
+  TOPS: "tops",
+  JEANS: "jeans",
+  DRESSES: "dresses",
+  SKIRTS: "skirts",
+  TROUSERS: "trousers",
+  SHORTS: "shorts",
 };
 
+export const WOMENSWEAR_SUBCATEGORIES = [
+  Subcategories.TOPS,
+  Subcategories.TSHIRT,
+  Subcategories.JEANS,
+  Subcategories.DRESSES,
+  Subcategories.SKIRTS,
+];
+
+export const MENSWEAR_SUBCATEGORIES = [
+  Subcategories.TOPS,
+  Subcategories.TSHIRT,
+  Subcategories.JEANS,
+  Subcategories.TROUSERS,
+  Subcategories.SHORTS,
+];
+
 export const Conditions = {
-  BRAND_NEW: "Brand new with tags",
-  LIKE_NEW: "Like new",
-  USED_EXCELLENT: "Used - Excellent",
-  USED_GOOD: "Used - Good",
-  USED_FAIR: "Used - Fair",
+  BRAND_NEW: "brand_new",
+  LIKE_NEW: "like_new",
+  USED_EXCELLENT: "used_excellent",
+  USED_GOOD: "used_good",
+  USED_FAIR: "used_fair",
 };
 
 export const Brands = [

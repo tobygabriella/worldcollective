@@ -1,5 +1,10 @@
 import React from "react";
 import { Categories, Subcategories, Conditions, Brands } from "../Enums/Enums.js";
+import {
+  getConditionName,
+  getCategoryName,
+  getSubcategoryName,
+} from "../utils/ListingInfoUtil.js";
 
 const InfoSection = ({
   category,
@@ -24,7 +29,7 @@ const InfoSection = ({
           </option>
           {Object.values(Categories).map((cat) => (
             <option key={cat} value={cat}>
-              {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              {getCategoryName(cat)}
             </option>
           ))}
         </select>
@@ -42,7 +47,7 @@ const InfoSection = ({
             </option>
             {Subcategories[category.toUpperCase()].map((subcat) => (
               <option key={subcat} value={subcat}>
-                {subcat.charAt(0).toUpperCase() + subcat.slice(1)}
+                {getSubcategoryName(subcat)}
               </option>
             ))}
           </select>
@@ -74,7 +79,7 @@ const InfoSection = ({
           </option>
           {Object.values(Conditions).map((cond) => (
             <option key={cond} value={cond}>
-              {cond}
+              {getConditionName(cond)}
             </option>
           ))}
         </select>
