@@ -29,6 +29,20 @@ app.use(
   })
 );
 
+const verifyToken = (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).json({ message: "No token, authorization denied" });
+  }
+  try {
+    const decoded = jwt.verify(token, secretKey);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: "Token is not valid" });
+  }
+};
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -44,19 +58,12 @@ const storage = new CloudinaryStorage({
 });
 
 const upload = multer({ storage: storage });
-app.post("/listings", upload.array("images", 8), async (req, res) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).json({ error: "No token, authorization denied" });
-  }
+app.post("/listings",verifyToken, upload.array("images", 8), async (req, res) => {
+   const { title, description, price, category, condition ,subcategory, brand } = req.body;
+   const imageUrls = req.files.map((file) => file.path);
+   const sellerId = req.user.id;
 
   try {
-    const decoded = jwt.verify(token, secretKey);
-    const sellerId = decoded.id;
-
-    const { title, description, price, category, condition, subcategory, brand} = req.body;
-    const imageUrls = req.files.map((file) => file.path);
-
     const newListing = await prisma.listing.create({
       data: {
         title,
@@ -80,14 +87,9 @@ app.post("/listings", upload.array("images", 8), async (req, res) => {
   }
 });
 
-app.get("/listings/user", async (req, res) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).json({ message: "No token, authorization denied" });
-  }
+app.get("/listings/user", verifyToken,async (req, res) => {
+ const userId = req.user.id;
   try {
-    const decoded = jwt.verify(token, secretKey);
-    const userId = decoded.id;
     const userListings = await prisma.listing.findMany({
       where: {
         sellerId: userId,
@@ -104,7 +106,6 @@ app.get("/listings/user", async (req, res) => {
 
 app.get("/listings/:id", async (req, res) => {
   const { id } = req.params;
-
   try {
     const listing = await prisma.listing.findUnique({
       where: { id: parseInt(id) },
