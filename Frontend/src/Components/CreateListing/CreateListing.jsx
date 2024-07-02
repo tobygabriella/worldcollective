@@ -4,6 +4,8 @@ import AppHeader from "../Headers/AppHeader";
 import PhotoSection from "./PhotoSection";
 import DescriptionSection from "./DescriptionSection";
 import InfoSection from "./InfoSection";
+import { useNavigate } from "react-router-dom";
+
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -20,6 +22,7 @@ const CreateListing = () => {
   const [photos, setPhotos] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
 
   const handlePhotoUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -55,8 +58,10 @@ const CreateListing = () => {
         },
       });
       if (response.ok) {
+        const createdListing = await response.json();
         setSuccess("Listing created successfully!");
         setError("");
+        navigate(`/listings/${createdListing.id}`);
       } else {
         const errMessage = await response.json();
         console.error("Error response:", errMessage);
