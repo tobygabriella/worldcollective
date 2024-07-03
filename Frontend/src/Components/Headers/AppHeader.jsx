@@ -1,15 +1,23 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from '../Contexts/AuthContext';
 import './AppHeader.css';
 
 const AppHeader = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleLogout = () => {
     logout();
   };
+
+   const handleSearch = (event) => {
+     if (event.key === "Enter") {
+       navigate(`/search?query=${searchQuery}`);
+     }
+   };
 
   const showIcons = location.pathname === '/userProfile';
   const showWelcome = location.pathname === '/';
@@ -20,8 +28,20 @@ const AppHeader = () => {
         <h3>WorldCollection</h3>
       </Link>
       <div className="searchContainer">
-        <input type="text" className="searchInput" placeholder="Search for" />
-        <span className="searchIcon">&#128269;</span>
+        <input
+          type="text"
+          className="searchInput"
+          placeholder="Search for"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={handleSearch}
+        />
+        <span
+          className="searchIcon"
+          onClick={() => navigate(`/search?query=${searchQuery}`)}
+        >
+          &#128269;
+        </span>
       </div>
       <div className="authLinks">
         {isAuthenticated ? (
