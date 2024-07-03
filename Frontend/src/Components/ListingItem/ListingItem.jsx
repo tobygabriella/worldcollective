@@ -12,6 +12,7 @@ const ListingItem = ({ id, title, price, imageUrls }) => {
           <p className="listingItemPrice">${price}</p>
           <div className="listingItemButtons"></div>
         </div>
+        <span className="heartIcon">&#10084;</span>
       </div>
     </Link>
   );

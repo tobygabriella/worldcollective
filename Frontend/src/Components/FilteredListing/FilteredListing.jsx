@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import ListingItem from "../ListingItem/ListingItem";
-import AppHeader from "../Headers/AppHeader";
-// import "./FilteredListings.css";
+import ListingsContainer from "../ListingsContainer/ListingsContainer";
+
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -27,21 +27,13 @@ const FilteredListings = () => {
   }, [filterType, filterValue]);
 
   return (
-    <div className="filteredListingsContainer">
-      <AppHeader />
-      <div className="filteredListingsGrid">
-        {listings.map((listing) => (
-          <ListingItem
-            key={listing.id}
-            id={listing.id}
-            title={listing.title}
-            price={listing.price}
-            imageUrls={listing.imageUrls}
-          />
-        ))}
-      </div>
-    </div>
+    <ListingsContainer title="Filtered Listings" listings={listings}>
+      {(listing) => (
+        <ListingItem key={listing.id} {...listing} />
+      )}
+    </ListingsContainer>
   );
 };
+
 
 export default FilteredListings;

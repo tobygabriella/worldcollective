@@ -51,18 +51,3 @@
 .userInfo h4 {
   margin: 5px 0;
 }
-
-.userListings {
-  margin-top: 20px;
-}
-
-.userListings h2 {
-  font-size: 24px;
-  margin-bottom: 20px;
-}
-
-.listingsGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-}

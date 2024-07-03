@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import ListingItem from "../ListingItem/ListingItem";
-import AppHeader from "../Headers/AppHeader";
+import ListingsContainer from "../ListingsContainer/ListingsContainer";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -30,7 +30,7 @@ const SearchResults = () => {
         setListings(data.listings);
         setUsers(data.users);
       } catch (err) {
-        setError(err.message); 
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -40,24 +40,9 @@ const SearchResults = () => {
   }, [location.search]);
 
   return (
-    <div className="searchResults">
-      <AppHeader />
-      <h2>Search Results</h2>
-      {loading && <p>Loading...</p>}
-      {error && <p className="error">{error}</p>}
-      <div className="listings">
-        {listings.map((listing) => (
-          <ListingItem key={listing.id} {...listing} />
-        ))}
-      </div>
-      <div className="users">
-        {users.map((user) => (
-          <div key={user.id} className="userItem">
-            <h3>{user.username}</h3>
-          </div>
-        ))}
-      </div>
-    </div>
+    <ListingsContainer title="Search Results" listings={listings}>
+      {(listing) => <ListingItem key={listing.id} {...listing} />}
+    </ListingsContainer>
   );
 };
 

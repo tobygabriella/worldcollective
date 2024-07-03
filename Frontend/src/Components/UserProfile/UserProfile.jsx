@@ -3,6 +3,7 @@ import { useAuth } from "../Contexts/AuthContext";
 import AppHeader from "../Headers/AppHeader";
 import ListingItem from "../ListingItem/ListingItem";
 import "./UserProfile.css";
+import ListingsContainer from "../ListingsContainer/ListingsContainer";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -47,18 +48,9 @@ const UserProfile = () => {
         </div>
       </div>
       <div className="userListings">
-        <h2>Your Listings</h2>
-        <div className="listingsGrid">
-          {listings.map((listing) => (
-            <ListingItem
-              key={listing.id}
-              id={listing.id}
-              title={listing.title}
-              price={listing.price}
-              imageUrls={listing.imageUrls}
-            />
-          ))}
-        </div>
+        <ListingsContainer title="Your Listings" listings={listings}>
+          {(listing) => <ListingItem key={listing.id} {...listing} />}
+        </ListingsContainer>
       </div>
     </div>
   );
