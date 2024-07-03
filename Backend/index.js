@@ -58,37 +58,50 @@ const storage = new CloudinaryStorage({
 });
 
 const upload = multer({ storage: storage });
-app.post("/listings",verifyToken, upload.array("images", 8), async (req, res) => {
-   const { title, description, price, category, condition ,subcategory, brand } = req.body;
-   const imageUrls = req.files.map((file) => file.path);
-   const sellerId = req.user.id;
+app.post(
+  "/listings",
+  verifyToken,
+  upload.array("images", 8),
+  async (req, res) => {
+    const {
+      title,
+      description,
+      price,
+      category,
+      condition,
+      subcategory,
+      brand,
+    } = req.body;
+    const imageUrls = req.files.map((file) => file.path);
+    const sellerId = req.user.id;
 
-  try {
-    const newListing = await prisma.listing.create({
-      data: {
-        title,
-        description,
-        price: parseFloat(price),
-        category,
-        subcategory,
-        brand,
-        condition,
-        imageUrls,
-        sellerId: parseInt(sellerId),
-        status: "active",
-      },
-    });
-    res.status(201).json(newListing);
-  } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while creating the listing" });
+    try {
+      const newListing = await prisma.listing.create({
+        data: {
+          title,
+          description,
+          price: parseFloat(price),
+          category,
+          subcategory,
+          brand,
+          condition,
+          imageUrls,
+          sellerId: parseInt(sellerId),
+          status: "active",
+        },
+      });
+      res.status(201).json(newListing);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while creating the listing" });
+    }
   }
-});
+);
 
-app.get("/listings/user", verifyToken,async (req, res) => {
- const userId = req.user.id;
+app.get("/listings/user", verifyToken, async (req, res) => {
+  const userId = req.user.id;
   try {
     const userListings = await prisma.listing.findMany({
       where: {
@@ -196,6 +209,80 @@ app.get("/listings/price/:maxPrice", async (req, res) => {
       .json({ error: "Something went wrong while fetching the listings" });
   }
 });
+
+app.get("/search", async (req, res) => {
+  const { query } = req.query;
+
+  if (!query) {
+    return res.status(400).json({ message: "Query parameter is required" });
+  }
+  const keywords = query.split(" ").map((keyword) => keyword.trim());
+  try {
+    // Perform a search for listings
+    const listings = await prisma.listing.findMany({
+      where: {
+        OR: keywords.map((keyword) => ({
+          OR: [
+            {
+              title: {
+                contains: keyword,
+                mode: "insensitive",
+              },
+            },
+            {
+              description: {
+                contains: keyword,
+                mode: "insensitive",
+              },
+            },
+            {
+              category: {
+                contains: keyword,
+                mode: "insensitive",
+              },
+            },
+            {
+              subcategory: {
+                contains: keyword,
+                mode: "insensitive",
+              },
+            },
+            {
+              brand: {
+                contains: keyword,
+                mode: "insensitive",
+              },
+            },
+          ],
+        })),
+      },
+    });
+
+    // Perform a search for users
+    const users = await prisma.user.findMany({
+      where: {
+        username: {
+          contains: query,
+          mode: "insensitive",
+        },
+      },
+    });
+
+    // Combine results into a single response object
+    const results = {
+      listings,
+      users,
+    };
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.error("Error performing search:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while performing the search" });
+  }
+});
+
 
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
