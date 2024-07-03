@@ -237,7 +237,7 @@ app.get("/search", async (req, res) => {
             },
             {
               category: {
-                contains: keyword,
+                equals: keyword,
                 mode: "insensitive",
               },
             },
@@ -258,7 +258,6 @@ app.get("/search", async (req, res) => {
       },
     });
 
-    // Perform a search for users
     const users = await prisma.user.findMany({
       where: {
         username: {
