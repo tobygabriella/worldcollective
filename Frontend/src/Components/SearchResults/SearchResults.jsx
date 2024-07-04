@@ -2,6 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import ListingItem from "../ListingItem/ListingItem";
 import ListingsContainer from "../ListingsContainer/ListingsContainer";
+import {
+  getConditionName,
+  getCategoryName,
+  getSubcategoryName,
+} from "../utils/ListingInfoUtil.js";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -9,19 +14,39 @@ const SearchResults = () => {
   const location = useLocation();
   const [listings, setListings] = useState([]);
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      const query = new URLSearchParams(location.search).get("query");
+      const searchParams = new URLSearchParams(location.search);
+      const query = searchParams.get("query");
       if (!query) return;
 
-      setLoading(true);
+      // Translate filter values for the backend request
+      const translatedParams = new URLSearchParams();
+      translatedParams.set("query", query);
+      searchParams.forEach((value, key) => {
+        if (key !== "query") {
+          if (key === "condition") {
+            translatedParams.set(key, getConditionName(value));
+          } else if (key === "category") {
+            translatedParams.set(key, getCategoryName(value));
+          } else if (key === "subcategory") {
+            translatedParams.set(key, getSubcategoryName(value));
+          } else {
+            translatedParams.set(key, value);
+          }
+        }
+      });
+
+      setIsLoading(true);
       setError(null);
 
       try {
-        const response = await fetch(`${API_KEY}/search?query=${query}`);
+        const response = await fetch(
+          `${API_KEY}/search?${translatedParams.toString()}`
+        );
         if (!response.ok) {
           throw new Error("Failed to fetch search results");
         }
@@ -32,7 +57,7 @@ const SearchResults = () => {
       } catch (err) {
         setError(err.message);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
@@ -40,9 +65,24 @@ const SearchResults = () => {
   }, [location.search]);
 
   return (
-    <ListingsContainer title="Search Results" listings={listings}>
-      {(listing) => <ListingItem key={listing.id} {...listing} />}
-    </ListingsContainer>
+    <>
+      <ListingsContainer
+        title="Search Results"
+        listings={listings}
+        showFilters={true}
+      >
+        {(listing) => <ListingItem key={listing.id} {...listing} />}
+      </ListingsContainer>
+      {isLoading && <p>Loading...</p>}
+      {error && <p className="error">{error}</p>}
+      <div className="users">
+        {users.map((user) => (
+          <div key={user.id} className="userItem">
+            <h3>{user.username}</h3>
+          </div>
+        ))}
+      </div>
+    </>
   );
 };
 
