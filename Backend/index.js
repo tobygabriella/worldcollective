@@ -169,6 +169,34 @@ app.get("/listings/category/:category", async (req, res) => {
   }
 });
 
+app.get("/listings/subcategory/:subcategory", async (req, res) => {
+  const { subcategory } = req.params;
+  try {
+    const listings = await prisma.listing.findMany({ where: { subcategory } });
+    res.status(200).json(listings);
+  } catch (error) {
+    console.error("Error fetching listings by subcategory:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching the listings" });
+  }
+});
+
+app.get("/listings/price/:maxPrice", async (req, res) => {
+  const { maxPrice } = req.params;
+  try {
+    const listings = await prisma.listing.findMany({
+      where: { price: { lte: parseFloat(maxPrice) } },
+    });
+    res.status(200).json(listings);
+  } catch (error) {
+    console.error("Error fetching listings by price:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching the listings" });
+  }
+});
+
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
   try {
