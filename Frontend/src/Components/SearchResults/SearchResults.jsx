@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import ListingItem from "../ListingItem/ListingItem";
 import ListingsContainer from "../ListingsContainer/ListingsContainer";
 import {
@@ -7,6 +7,7 @@ import {
   getCategoryName,
   getSubcategoryName,
 } from "../utils/ListingInfoUtil.js";
+import "./SearchResults.css"
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -78,7 +79,16 @@ const SearchResults = () => {
       <div className="users">
         {users.map((user) => (
           <div key={user.id} className="userItem">
-            <h3>{user.username}</h3>
+            <Link to={`/users/${user.username}`}>
+              <img
+                src={user.profilePicture || "default-profile.png"}
+                alt={user.username}
+                className="profilePicture"
+              />
+            </Link>
+            <h3>
+              <Link to={`/users/${user.username}`}>@{user.username}</Link>
+            </h3>
           </div>
         ))}
       </div>
