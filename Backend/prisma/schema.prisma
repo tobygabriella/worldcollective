@@ -16,15 +16,27 @@ datasource db {
 
 model User {
   id             Int       @id @default(autoincrement())
+  firstname      String
+  lastname       String
   username       String    @unique
   password       String
-  profilePicture String?
   bio            String?
   createdAt      DateTime  @default(now())
   listings       Listing[]
   likes          Like[]
   notifications  Notification[]
+  followers      Follow[]      @relation("following")
+  followings     Follow[]      @relation("follower")
   }
+
+  model Follow {
+  id         Int      @id @default(autoincrement())
+  followerId Int
+  followingId Int
+  createdAt  DateTime @default(now())
+  follower   User     @relation("follower", fields: [followerId], references: [id])
+  following  User     @relation("following", fields: [followingId], references: [id])
+}
 
  model Listing {
   id          Int       @id @default(autoincrement())
@@ -32,9 +44,9 @@ model User {
   description String
   price       Decimal
   category    String
-  subcategory String?
+  subcategory String
   condition   String
-  brand       String?
+  brand       String
   imageUrls   String[]
   sellerId    Int
   seller      User      @relation(fields: [sellerId], references: [id])

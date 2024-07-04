@@ -362,7 +362,7 @@ app.get("/users/:username", async (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, firstname, lastname} = req.body;
   try {
     const existingUser = await prisma.user.findUnique({ where: { username } });
     if (existingUser) {
@@ -373,6 +373,8 @@ app.post("/register", async (req, res) => {
       data: {
         username,
         password: hashedPassword,
+        firstname,
+        lastname,
       },
     });
     res.status(201).json(newUser);
