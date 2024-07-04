@@ -52,7 +52,6 @@
   object-fit: cover;
 }
 
-
 .initials {
   font-size: 36px;
   font-weight: bold;
@@ -69,4 +68,17 @@
 
 .userInfo h4 {
   margin: 5px 0;
+}
+
+.button {
+  background-color:red;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: black;
 }

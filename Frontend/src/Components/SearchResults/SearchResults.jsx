@@ -7,7 +7,9 @@ import {
   getCategoryName,
   getSubcategoryName,
 } from "../utils/ListingInfoUtil.js";
-import "./SearchResults.css"
+import { getInitials } from "../utils/initialsUtils.js";
+import "./SearchResults.css";
+
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -80,11 +82,9 @@ const SearchResults = () => {
         {users.map((user) => (
           <div key={user.id} className="userItem">
             <Link to={`/users/${user.username}`}>
-              <img
-                src={user.profilePicture || "default-profile.png"}
-                alt={user.username}
-                className="profilePicture"
-              />
+              <div className="initials">
+                {getInitials(user.firstname, user.lastname)}
+              </div>
             </Link>
             <h3>
               <Link to={`/users/${user.username}`}>@{user.username}</Link>

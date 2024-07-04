@@ -2,6 +2,7 @@ import React,{ useState } from 'react';
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from '../Contexts/AuthContext';
 import './AppHeader.css';
+import { getInitials } from "../utils/initialsUtils";
 
 const AppHeader = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -21,12 +22,7 @@ const AppHeader = () => {
 
   const showIcons = location.pathname === '/userProfile';
   const showWelcome = location.pathname === '/';
-
-  const getInitials = (firstName, lastName) => {
-    if (!firstName && !lastName) return "";
-    return `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
-  };
-
+  
   const initials = getInitials(user?.firstname, user?.lastname);
 
 
