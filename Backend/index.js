@@ -310,7 +310,6 @@ app.get("/search", async (req, res) => {
          id: true,
          username: true,
          bio: true,
-         profilePicture: true,
        },
      });
 
@@ -342,8 +341,8 @@ app.get("/users/:username", async (req, res) => {
       select: {
         id: true,
         username: true,
-        bio: true,
-        profilePicture: true,
+        firstname: true,
+        lastname: true,
         listings: true,
       },
     });
@@ -360,6 +359,89 @@ app.get("/users/:username", async (req, res) => {
       .json({ error: "Something went wrong while fetching the user details" });
   }
 });
+// Follow a user
+app.post("/users/:id/follow", verifyToken, async (req, res) => {
+  const { id: followingId } = req.params;
+  const followerId = req.user.id;
+
+  try {
+    const follow = await prisma.follow.create({
+      data: {
+        followerId: parseInt(followerId),
+        followingId: parseInt(followingId),
+      },
+    });
+
+    res.status(201).json(follow);
+  } catch (error) {
+    console.error("Error following user:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while following the user" });
+  }
+});
+
+// Unfollow a user
+app.delete("/users/:id/unfollow", verifyToken, async (req, res) => {
+  const { id: followingId } = req.params;
+  const followerId = req.user.id;
+
+  try {
+    await prisma.follow.deleteMany({
+      where: {
+        followerId: parseInt(followerId),
+        followingId: parseInt(followingId),
+      },
+    });
+
+    res.status(200).json({ message: "Unfollowed successfully" });
+  } catch (error) {
+    console.error("Error unfollowing user:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while unfollowing the user" });
+  }
+});
+
+// Get followers
+app.get("/users/:id/followers", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const followers = await prisma.follow.findMany({
+      where: { followingId: parseInt(id) },
+      include: { follower: true },
+    });
+
+    res.status(200).json(followers);
+  } catch (error) {
+    console.error("Error fetching followers:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching followers" });
+  }
+});
+
+// Get followings
+app.get("/users/:id/followings", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const followings = await prisma.follow.findMany({
+      where: { followerId: parseInt(id) },
+      include: { following: true },
+    });
+
+    res.status(200).json(followings);
+  } catch (error) {
+    console.error("Error fetching followings:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching followings" });
+  }
+});
+
+
 
 app.post("/register", async (req, res) => {
   const { username, password, firstname, lastname} = req.body;
