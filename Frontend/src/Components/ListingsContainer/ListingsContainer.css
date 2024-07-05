@@ -1,0 +1,36 @@
+.listingsContainer {
+  margin-top: 80px;
+}
+
+.listingsContent {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.listingsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.listingItemWrapper {
+  flex: 1 1 calc(25% - 20px);
+  box-sizing: border-box;
+  position: relative;
+}
+
+.listingItemWrapper .heartIcon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #fff;
+}
