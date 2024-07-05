@@ -48,7 +48,11 @@ const UserProfile = () => {
         </div>
       </div>
       <div className="userListings">
-        <ListingsContainer title="Your Listings" listings={listings}>
+        <ListingsContainer
+          title="Your Listings"
+          listings={listings}
+          showFilters={false}
+        >
           {(listing) => <ListingItem key={listing.id} {...listing} />}
         </ListingsContainer>
       </div>

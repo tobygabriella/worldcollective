@@ -20,9 +20,9 @@ export function getConditionName(condition) {
 export function getCategoryName(category) {
   switch (category) {
     case Categories.WOMENSWEAR:
-      return "Womenswear";
+      return "womenswear";
     case Categories.MENSWEAR:
-      return "Menswear";
+      return "menswear";
     default:
       return category;
   }

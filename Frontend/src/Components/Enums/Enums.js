@@ -4,7 +4,7 @@ export const Categories = {
 };
 
 export const Subcategories = {
-  TSHIRT: "tshirt",
+  TSHIRTS: "tshirts",
   TOPS: "tops",
   JEANS: "jeans",
   DRESSES: "dresses",
@@ -15,7 +15,7 @@ export const Subcategories = {
 
 export const WOMENSWEAR_SUBCATEGORIES = [
   Subcategories.TOPS,
-  Subcategories.TSHIRT,
+  Subcategories.TSHIRTS,
   Subcategories.JEANS,
   Subcategories.DRESSES,
   Subcategories.SKIRTS,
@@ -23,7 +23,7 @@ export const WOMENSWEAR_SUBCATEGORIES = [
 
 export const MENSWEAR_SUBCATEGORIES = [
   Subcategories.TOPS,
-  Subcategories.TSHIRT,
+  Subcategories.TSHIRTS,
   Subcategories.JEANS,
   Subcategories.TROUSERS,
   Subcategories.SHORTS,

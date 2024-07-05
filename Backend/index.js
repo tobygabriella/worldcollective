@@ -11,6 +11,7 @@ const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const bodyParser = require("body-parser");
+const { buildFilters } = require("./Utils/buildFilters");
 
 const saltRounds = 14;
 const secretKey = process.env.JWT_SECRET;
@@ -169,9 +170,10 @@ app.delete("/listings/:id", verifyToken, async (req, res) => {
 
 app.get("/listings/category/:category", async (req, res) => {
   const { category } = req.params;
+  const filters = buildFilters({ category }, req.query);
   try {
     const listings = await prisma.listing.findMany({
-      where: { category },
+      where: { ...filters },
     });
     res.status(200).json(listings);
   } catch (error) {
@@ -184,8 +186,9 @@ app.get("/listings/category/:category", async (req, res) => {
 
 app.get("/listings/subcategory/:subcategory", async (req, res) => {
   const { subcategory } = req.params;
+  const filters = buildFilters({ subcategory }, req.query);
   try {
-    const listings = await prisma.listing.findMany({ where: { subcategory } });
+    const listings = await prisma.listing.findMany({ where: { ...filters } });
     res.status(200).json(listings);
   } catch (error) {
     console.error("Error fetching listings by subcategory:", error);
@@ -197,13 +200,49 @@ app.get("/listings/subcategory/:subcategory", async (req, res) => {
 
 app.get("/listings/price/:maxPrice", async (req, res) => {
   const { maxPrice } = req.params;
+  const filters = buildFilters(
+    { price: { lte: parseFloat(maxPrice) } },
+    req.query
+  );
   try {
     const listings = await prisma.listing.findMany({
-      where: { price: { lte: parseFloat(maxPrice) } },
+      where: { ...filters },
     });
     res.status(200).json(listings);
   } catch (error) {
     console.error("Error fetching listings by price:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching the listings" });
+  }
+});
+app.get("/listings/brand/:brand", async (req, res) => {
+  const { brand } = req.params;
+  const filters = buildFilters({ brand }, req.query);
+
+  try {
+    const listings = await prisma.listing.findMany({
+      where: { ...filters },
+    });
+    res.status(200).json(listings);
+  } catch (error) {
+    console.error("Error fetching listings by brand:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching the listings" });
+  }
+});
+app.get("/listings/condition/:condition", async (req, res) => {
+  const { condition } = req.params;
+  const filters = buildFilters({ condition }, req.query);
+
+  try {
+    const listings = await prisma.listing.findMany({
+      where: { ...filters },
+    });
+    res.status(200).json(listings);
+  } catch (error) {
+    console.error("Error fetching listings by condition:", error);
     res
       .status(500)
       .json({ error: "Something went wrong while fetching the listings" });
@@ -217,47 +256,51 @@ app.get("/search", async (req, res) => {
     return res.status(400).json({ message: "Query parameter is required" });
   }
   const keywords = query.split(" ").map((keyword) => keyword.trim());
+  const filters = buildFilters({}, req.query);
   try {
     // Perform a search for listings
     const listings = await prisma.listing.findMany({
       where: {
-        OR: keywords.map((keyword) => ({
-          OR: [
-            {
-              title: {
-                contains: keyword,
-                mode: "insensitive",
+        AND: [
+          // Ensure that each keyword must match at least one of the fields
+          ...keywords.map((keyword) => ({
+            OR: [
+              {
+                title: {
+                  contains: keyword,
+                  mode: "insensitive",
+                },
               },
-            },
-            {
-              description: {
-                contains: keyword,
-                mode: "insensitive",
+              {
+                description: {
+                  contains: keyword,
+                  mode: "insensitive",
+                },
               },
-            },
-            {
-              category: {
-                equals: keyword,
-                mode: "insensitive",
+              {
+                category: {
+                  equals: keyword,
+                  mode: "insensitive",
+                },
               },
-            },
-            {
-              subcategory: {
-                contains: keyword,
-                mode: "insensitive",
+              {
+                subcategory: {
+                  contains: keyword,
+                  mode: "insensitive",
+                },
               },
-            },
-            {
-              brand: {
-                contains: keyword,
-                mode: "insensitive",
+              {
+                brand: {
+                  contains: keyword,
+                  mode: "insensitive",
+                },
               },
-            },
-          ],
-        })),
+            ],
+          })),
+          filters,
+        ],
       },
     });
-
     const users = await prisma.user.findMany({
       where: {
         username: {
@@ -281,7 +324,6 @@ app.get("/search", async (req, res) => {
       .json({ error: "Something went wrong while performing the search" });
   }
 });
-
 
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
