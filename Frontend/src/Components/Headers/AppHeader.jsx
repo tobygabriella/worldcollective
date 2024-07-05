@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React,{ useState } from 'react';
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from '../Contexts/AuthContext';
 import './AppHeader.css';
+import { getInitials } from "../utils/initialsUtils";
 
 const AppHeader = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -21,6 +22,9 @@ const AppHeader = () => {
 
   const showIcons = location.pathname === '/userProfile';
   const showWelcome = location.pathname === '/';
+  
+  const initials = getInitials(user?.firstname, user?.lastname);
+
 
   return (
     <header className="header">
@@ -53,15 +57,25 @@ const AppHeader = () => {
             )}
             {showIcons && (
               <div className="icons">
-                <i className="fas fa-bell"></i>
-                <i className="fas fa-heart"></i>
-                <Link to="/createListing">
+                <div className="iconWrapper" data-tooltip="Notification Center">
+                  <i className="fas fa-bell"></i>
+                </div>
+                <div className="iconWrapper" data-tooltip="Wishlist">
+                  <i className="fas fa-heart"></i>
+                </div>
+                <Link
+                  to="/createListing"
+                  className="iconWrapper"
+                  data-tooltip="Add a Listing"
+                >
                   <i className="fas fa-plus createListing"></i>
                 </Link>
               </div>
             )}
             <Link to="/userProfile" className="circleLink">
-              <div className="circle"></div>
+              <div className="circle">
+                <span className="circleInitials">{initials}</span>
+              </div>
             </Link>
             <button onClick={handleLogout} className="logoutButton">
               Logout

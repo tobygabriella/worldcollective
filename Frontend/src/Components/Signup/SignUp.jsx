@@ -10,6 +10,8 @@ const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 const Signup = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+   const [firstname, setFirstName] = useState("");
+   const [lastname, setLastName] = useState("");
   const [error, setError] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -23,7 +25,7 @@ const Signup = () => {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, firstname, lastname }),
       });
 
       if (response.ok) {
@@ -53,6 +55,22 @@ const Signup = () => {
           </Link>
         </div>
         <form className="signupForm" onSubmit={handleSignup}>
+          <input
+            type="text"
+            placeholder="First Name"
+            className="inputField"
+            value={firstname}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Last Name"
+            className="inputField"
+            value={lastname}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+          />
           <input
             type="text"
             placeholder="Username"

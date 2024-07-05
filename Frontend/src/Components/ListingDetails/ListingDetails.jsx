@@ -81,7 +81,7 @@ const ListingDetails = () => {
             )}
             <div className="sellerInfo">
               <img
-                src={user?.profilePicture || "default-profile.png"}
+                src="default-profile.png"
                 alt={user?.username}
                 className="sellerProfilePicture"
               />

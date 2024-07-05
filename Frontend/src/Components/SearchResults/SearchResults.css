@@ -1,0 +1,41 @@
+.userItem {
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.userItem img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 15px;
+  background-color: red;
+}
+
+.userItem h3 {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.userItem a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.userItem a:hover {
+  text-decoration: underline;
+}
+
+.userItem .initials {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: red;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  margin-right: 10px;
+}

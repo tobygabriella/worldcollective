@@ -301,14 +301,18 @@ app.get("/search", async (req, res) => {
         ],
       },
     });
-    const users = await prisma.user.findMany({
-      where: {
-        username: {
-          contains: query,
-          mode: "insensitive",
-        },
-      },
-    });
+
+     const users = await prisma.user.findMany({
+       where: {
+         username: { contains: query, mode: "insensitive" },
+       },
+       select: {
+         id: true,
+         username: true,
+         bio: true,
+         profilePicture: true,
+       },
+     });
 
     // Combine results into a single response object
     const results = {
@@ -325,8 +329,40 @@ app.get("/search", async (req, res) => {
   }
 });
 
+app.get("/users/:username", async (req, res) => {
+  const { username } = req.params;
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: "insensitive",
+        },
+      },
+      select: {
+        id: true,
+        username: true,
+        bio: true,
+        profilePicture: true,
+        listings: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching the user details" });
+  }
+});
+
 app.post("/register", async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, firstname, lastname} = req.body;
   try {
     const existingUser = await prisma.user.findUnique({ where: { username } });
     if (existingUser) {
@@ -337,6 +373,8 @@ app.post("/register", async (req, res) => {
       data: {
         username,
         password: hashedPassword,
+        firstname,
+        lastname,
       },
     });
     res.status(201).json(newUser);
