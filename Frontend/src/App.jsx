@@ -13,11 +13,16 @@ const UserProfile = lazy(() =>
 const CreateListing = lazy(() =>
   import("./Components/CreateListing/CreateListing.jsx")
 );
-const ListingDetails = lazy(() => import("./Components/ListingDetails/ListingDetails.jsx"));
+const ListingDetails = lazy(() =>
+  import("./Components/ListingDetails/ListingDetails.jsx")
+);
 const FilteredListing = lazy(() =>
   import("./Components/FilteredListing/FilteredListing.jsx")
 );
-const SearchResults = lazy(() => import("./Components/SearchResults/SearchResults.jsx"))
+const SearchResults = lazy(() =>
+  import("./Components/SearchResults/SearchResults.jsx")
+);
+const Wishlist = lazy(() => import("./Components/Wishlist/Wishlist.jsx"));
 const OtherUsersProfile = lazy(() =>
   import("./Components/OtherUsersProfile/OtherUsersProfile.jsx")
 );
@@ -39,6 +44,7 @@ function App() {
             />
             <Route path="/search" element={<SearchResults />} />
             <Route path="/users/:username" element={<OtherUsersProfile />} />
+            <Route path="/wishlist" element={<Wishlist />} />
           </Routes>
         </Suspense>
       </AuthProvider>

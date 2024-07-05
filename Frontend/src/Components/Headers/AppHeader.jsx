@@ -64,9 +64,13 @@ const AppHeader = () => {
                 <div className="iconWrapper" data-tooltip="Notification Center">
                   <i className="fas fa-bell"></i>
                 </div>
-                <div className="iconWrapper" data-tooltip="Wishlist">
+                <Link
+                  to="/wishlist"
+                  className="iconWrapper"
+                  data-tooltip="Wishlist"
+                >
                   <i className="fas fa-heart"></i>
-                </div>
+                </Link>
                 <Link
                   to="/createListing"
                   className="iconWrapper"

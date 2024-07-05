@@ -4,6 +4,7 @@
   border-radius: 5px;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 200px;
 }
 
 .listingItemImage {
@@ -32,12 +33,14 @@
 }
 
 .heartIcon {
-  position: absolute;
-  bottom: 100px;
-  right: 10px;
-  font-size: 24px;
-  color: red;
   cursor: pointer;
+  font-size: 1.5em;
+  color: grey;
+  transition: color 0.3s;
+}
+
+.heartIcon.liked {
+  color: red;
 }
 
 .listingItemLink {
