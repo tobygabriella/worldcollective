@@ -37,13 +37,10 @@ const CreateListing = () => {
     e.preventDefault();
 
     const formData = new FormData();
-    formData.append("title", formInput.title);
-    formData.append("description", formInput.description);
-    formData.append("price", formInput.price);
-    formData.append("category", formInput.category);
-    formData.append("subcategory", formInput.subcategory);
-    formData.append("condition", formInput.condition);
-    formData.append("brand", formInput.brand);
+    Object.keys(formInput).forEach((key) => {
+      formData.append(key, formInput[key]);
+    });
+
     photos.forEach((photo) => {
       formData.append("images", photo);
     });
@@ -88,31 +85,10 @@ const CreateListing = () => {
             handlePhotoDelete={handlePhotoDelete}
           />
           <DescriptionSection
-            title={formInput.title}
-            setTitle={(value) => setFormInput({ ...formInput, title: value })}
-            description={formInput.description}
-            setDescription={(value) =>
-              setFormInput({ ...formInput, description: value })
-            }
+            formInput={formInput}
+            setFormInput={setFormInput}
           />
-          <InfoSection
-            category={formInput.category}
-            setCategory={(value) =>
-              setFormInput({ ...formInput, category: value })
-            }
-            subcategory={formInput.subcategory}
-            setSubcategory={(value) =>
-              setFormInput({ ...formInput, subcategory: value })
-            }
-            brand={formInput.brand}
-            setBrand={(value) => setFormInput({ ...formInput, brand: value })}
-            condition={formInput.condition}
-            setCondition={(value) =>
-              setFormInput({ ...formInput, condition: value })
-            }
-            price={formInput.price}
-            setPrice={(value) => setFormInput({ ...formInput, price: value })}
-          />
+          <InfoSection formInput={formInput} setFormInput={setFormInput} />
           <button type="submit" className="submitButton">
             Create Listing
           </button>

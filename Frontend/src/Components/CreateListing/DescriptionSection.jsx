@@ -1,11 +1,15 @@
 import React from "react";
 
-const DescriptionSection = ({
-  title,
-  setTitle,
-  description,
-  setDescription,
-}) => {
+const DescriptionSection = ({ formInput, setFormInput }) => {
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormInput((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   return (
     <div className="descriptionSection">
       <h3>Description</h3>
@@ -13,15 +17,17 @@ const DescriptionSection = ({
         Title
         <input
           type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          name="title"
+          value={formInput.title}
+          onChange={handleChange}
           required
         />
       </label>
       <textarea
         placeholder="e.g. small grey Nike t-shirt, only worn a few times"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
+        name="description"
+        value={formInput.description}
+        onChange={handleChange}
         maxLength="1000"
       ></textarea>
       <div className="hashtagInfo">
