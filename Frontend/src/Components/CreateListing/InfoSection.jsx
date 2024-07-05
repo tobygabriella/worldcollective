@@ -1,33 +1,39 @@
 import React from "react";
-import { Categories, Subcategories, Conditions, Brands } from "../Enums/Enums.js";
+import { Category } from "../Enums/Category.js";
+import { Condition } from "../Enums/Condition.js";
+import { Brand } from "../Enums/Brand.js";
 import {
   getConditionName,
   getCategoryName,
   getSubcategoryName,
+  getSubcategory,
 } from "../utils/ListingInfoUtil.js";
 
-const InfoSection = ({
-  category,
-  setCategory,
-  brand,
-  setBrand,
-  condition,
-  setCondition,
-  price,
-  setPrice,
-  subcategory,
-  setSubcategory,
-}) => {
+const InfoSection = ({ formInput, setFormInput }) => {
+    const handleChange = (e) => {
+      const { name, value } = e.target;
+      setFormInput((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    };
+
+  const subcategories = getSubcategory(formInput.category);
+
   return (
     <div className="infoSection">
       <h3>Info</h3>
       <label>
         Category
-        <select value={category} onChange={(e) => setCategory(e.target.value)}>
+        <select
+          name="category"
+          value={formInput.category}
+          onChange={handleChange}
+        >
           <option value="" disabled>
             Select a category
           </option>
-          {Object.values(Categories).map((cat) => (
+          {Object.values(Category).map((cat) => (
             <option key={cat} value={cat}>
               {getCategoryName(cat)}
             </option>
@@ -35,17 +41,18 @@ const InfoSection = ({
         </select>
       </label>
 
-      {category && (
+      {formInput.category && (
         <label>
           Subcategory
           <select
-            value={subcategory}
-            onChange={(e) => setSubcategory(e.target.value)}
+            name="subcategory"
+            value={formInput.subcategory}
+            onChange={handleChange}
           >
             <option value="" disabled>
               Select a subcategory
             </option>
-            {Subcategories[category.toUpperCase()].map((subcat) => (
+            {subcategories.map((subcat) => (
               <option key={subcat} value={subcat}>
                 {getSubcategoryName(subcat)}
               </option>
@@ -56,11 +63,11 @@ const InfoSection = ({
 
       <label>
         Brand
-        <select value={brand} onChange={(e) => setBrand(e.target.value)}>
+        <select name="brand" value={formInput.brand} onChange={handleChange}>
           <option value="" disabled>
             Select a brand
           </option>
-          {Brands.map((br) => (
+          {Brand.map((br) => (
             <option key={br} value={br}>
               {br}
             </option>
@@ -71,13 +78,14 @@ const InfoSection = ({
       <label>
         Condition
         <select
-          value={condition}
-          onChange={(e) => setCondition(e.target.value)}
+          name="condition"
+          value={formInput.condition}
+          onChange={handleChange}
         >
           <option value="" disabled>
             Select a condition
           </option>
-          {Object.values(Conditions).map((cond) => (
+          {Object.values(Condition).map((cond) => (
             <option key={cond} value={cond}>
               {getConditionName(cond)}
             </option>
@@ -87,9 +95,10 @@ const InfoSection = ({
       <label>
         Price
         <input
+          name="price"
           type="number"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
+          value={formInput.price}
+          onChange={handleChange}
           required
         />
       </label>
