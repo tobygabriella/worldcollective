@@ -43,6 +43,7 @@ const CreateListing = () => {
     formData.append("category", formInput.category);
     formData.append("subcategory", formInput.subcategory);
     formData.append("condition", formInput.condition);
+    formData.append("brand", formInput.brand);
     photos.forEach((photo) => {
       formData.append("images", photo);
     });

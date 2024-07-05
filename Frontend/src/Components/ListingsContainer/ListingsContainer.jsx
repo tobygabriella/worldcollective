@@ -2,13 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import AppHeader from "../Headers/AppHeader";
 import FilterDropdown from "./FilterDropdown.jsx";
-import {
-  Categories,
-  WOMENSWEAR_SUBCATEGORIES,
-  MENSWEAR_SUBCATEGORIES,
-  Brands,
-  Conditions,
-} from "../Enums/Enums.js";
+import { Category } from "../Enums/Category.js";
+import { Condition } from "../Enums/Condition.js";
+import { Brand } from "../Enums/Brand.js";
+import { getSubcategory } from "../utils/ListingInfoUtil.js";
 import "./ListingsContainer.css";
 
 const ListingsContainer = ({
@@ -54,28 +51,25 @@ const ListingsContainer = ({
             <div className="filters">
               <FilterDropdown
                 title="Category"
-                options={Object.values(Categories)}
+                options={Object.values(Category)}
                 onSelect={(option) => handleSelectFilter("category", option)}
                 selected={selectedFilters["category"]}
               />
               <FilterDropdown
                 title="Subcategory"
-                options={[
-                  ...WOMENSWEAR_SUBCATEGORIES,
-                  ...MENSWEAR_SUBCATEGORIES,
-                ]}
+                options={getSubcategory(selectedFilters["category"])}
                 onSelect={(option) => handleSelectFilter("subcategory", option)}
                 selected={selectedFilters["subcategory"]}
               />
               <FilterDropdown
                 title="Brand"
-                options={Brands}
+                options={Brand}
                 onSelect={(option) => handleSelectFilter("brand", option)}
                 selected={selectedFilters["brand"]}
               />
               <FilterDropdown
                 title="Condition"
-                options={Object.values(Conditions)}
+                options={Object.values(Condition)}
                 onSelect={(option) => handleSelectFilter("condition", option)}
                 selected={selectedFilters["condition"]}
               />

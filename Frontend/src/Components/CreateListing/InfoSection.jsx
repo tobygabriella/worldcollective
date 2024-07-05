@@ -1,9 +1,12 @@
 import React from "react";
-import { Categories, Subcategories, Conditions, Brands } from "../Enums/Enums.js";
+import { Category } from "../Enums/Category.js";
+import { Condition } from "../Enums/Condition.js";
+import { Brand } from "../Enums/Brand.js";
 import {
   getConditionName,
   getCategoryName,
   getSubcategoryName,
+  getSubcategory,
 } from "../utils/ListingInfoUtil.js";
 
 const InfoSection = ({
@@ -18,6 +21,8 @@ const InfoSection = ({
   subcategory,
   setSubcategory,
 }) => {
+  const subcategories = getSubcategory(category);
+
   return (
     <div className="infoSection">
       <h3>Info</h3>
@@ -27,7 +32,7 @@ const InfoSection = ({
           <option value="" disabled>
             Select a category
           </option>
-          {Object.values(Categories).map((cat) => (
+          {Object.values(Category).map((cat) => (
             <option key={cat} value={cat}>
               {getCategoryName(cat)}
             </option>
@@ -45,7 +50,7 @@ const InfoSection = ({
             <option value="" disabled>
               Select a subcategory
             </option>
-            {Subcategories[category.toUpperCase()].map((subcat) => (
+            {subcategories.map((subcat) => (
               <option key={subcat} value={subcat}>
                 {getSubcategoryName(subcat)}
               </option>
@@ -60,7 +65,7 @@ const InfoSection = ({
           <option value="" disabled>
             Select a brand
           </option>
-          {Brands.map((br) => (
+          {Brand.map((br) => (
             <option key={br} value={br}>
               {br}
             </option>
@@ -77,7 +82,7 @@ const InfoSection = ({
           <option value="" disabled>
             Select a condition
           </option>
-          {Object.values(Conditions).map((cond) => (
+          {Object.values(Condition).map((cond) => (
             <option key={cond} value={cond}>
               {getConditionName(cond)}
             </option>
