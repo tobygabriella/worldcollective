@@ -440,8 +440,110 @@ app.get("/users/:id/followings", async (req, res) => {
       .json({ error: "Something went wrong while fetching followings" });
   }
 });
+// Like an item
+app.post("/listings/:id/like", verifyToken, async (req, res) => {
+  const { id: itemId } = req.params;
+  const userId = req.user.id;
 
+  try {
+    const existingLike = await prisma.like.findFirst({
+      where: {
+        userId: parseInt(userId),
+        itemId: parseInt(itemId),
+      },
+    });
 
+    if (existingLike) {
+      return res.status(400).json({ message: "Item is already liked" });
+    }
+
+    const like = await prisma.like.create({
+      data: {
+        userId: parseInt(userId),
+        itemId: parseInt(itemId),
+      },
+    });
+
+    res.status(201).json(like);
+  } catch (error) {
+    console.error("Error liking item:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while liking the item" });
+  }
+});
+
+// Unlike an item
+app.delete("/listings/:id/like", verifyToken, async (req, res) => {
+  const { id: itemId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const existingLike = await prisma.like.findFirst({
+      where: {
+        userId: parseInt(userId),
+        itemId: parseInt(itemId),
+      },
+    });
+
+    if (!existingLike) {
+      return res.status(400).json({ message: "Item is not liked" });
+    }
+
+    await prisma.like.delete({
+      where: { id: existingLike.id },
+    });
+
+    res.status(200).json({ message: "Item unliked successfully" });
+  } catch (error) {
+    console.error("Error unliking item:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while unliking the item" });
+  }
+});
+
+// Get all liked items (wishlist) for the user
+app.get("/wishlist", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const likedItems = await prisma.like.findMany({
+      where: { userId: parseInt(userId) },
+      include: {
+        item: true,
+      },
+    });
+
+    const listings = likedItems.map((like) => like.item);
+
+    res.status(200).json(listings);
+  } catch (error) {
+    console.error("Error fetching liked items:", error);
+    res.status(500).json({ error: "Something went wrong while fetching liked items" });
+  }
+});
+
+app.get("/listings/:id/like-status", verifyToken, async (req, res) => {
+  const { id: itemId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const existingLike = await prisma.like.findFirst({
+      where: {
+        userId: parseInt(userId),
+        itemId: parseInt(itemId),
+      },
+    });
+
+    res.status(200).json({ isLiked: !!existingLike });
+  } catch (error) {
+    console.error("Error fetching liked status:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching liked status" });
+  }
+});
 
 app.post("/register", async (req, res) => {
   const { username, password, firstname, lastname} = req.body;
