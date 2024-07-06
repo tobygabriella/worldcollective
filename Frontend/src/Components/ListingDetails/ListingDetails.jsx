@@ -57,12 +57,17 @@ const ListingDetails = () => {
         <div className="listingDetails">
           <div className="listingImages">
             {listing.imageUrls.map((url, index) => (
-              <img
-                key={index}
-                src={url}
-                alt={listing.title}
-                className="listingImage"
-              />
+              <div className="imageWrapper" key={index}>
+                <img
+                  key={index}
+                  src={url}
+                  alt={listing.title}
+                  className="listingImage"
+                />
+                {listing.status === "sold" && (
+                  <div className="soldOverlay">SOLD</div>
+                )}
+              </div>
             ))}
           </div>
           <div className="listingInfo">
@@ -82,10 +87,12 @@ const ListingDetails = () => {
                 <button>Edit Listing</button>
                 <button onClick={handleDelete}>Delete Listing</button>
               </div>
-              ) : (
-              <button className="buyNowButton" onClick={handleBuyNow}>
-                Buy Now
-              </button>
+            ) : (
+              listing.status !== "sold" && (
+                <button className="buyNowButton" onClick={handleBuyNow}>
+                  Buy Now
+                </button>
+              )
             )}
             <div className="sellerInfo">
               <img

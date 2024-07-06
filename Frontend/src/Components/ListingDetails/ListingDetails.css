@@ -11,6 +11,22 @@
   display: flex;
   gap: 20px;
 }
+.imageWrapper {
+  position: relative;
+}
+
+.soldOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 20px;
+  font-size: 24px;
+  font-weight: bold;
+  border-radius: 5px;
+}
 
 .listingImages {
   flex: 1;
