@@ -46,6 +46,10 @@ const ListingDetails = () => {
     }
   };
 
+  const handleBuyNow = () => {
+    navigate(`/buy/${id}`);
+  };
+
   return (
     <div className="listingDetailsContainer">
       <AppHeader />
@@ -73,11 +77,15 @@ const ListingDetails = () => {
             <p>
               <strong>Condition:</strong> {listing.condition}
             </p>
-            {user?.id === listing.sellerId && (
+            {user?.id === listing.sellerId ? (
               <div className="listingActions">
                 <button>Edit Listing</button>
                 <button onClick={handleDelete}>Delete Listing</button>
               </div>
+              ) : (
+              <button className="buyNowButton" onClick={handleBuyNow}>
+                Buy Now
+              </button>
             )}
             <div className="sellerInfo">
               <img
