@@ -7,7 +7,7 @@ const ConfirmationPage = () => {
   const navigate = useNavigate();
 
   const handleBackToListings = () => {
-    navigate("userProfile");
+    navigate("/userProfile");
   };
 
   return (

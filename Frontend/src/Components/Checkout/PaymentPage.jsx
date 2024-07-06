@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 import AppHeader from "../Headers/AppHeader";
 import "./PaymentPage.css";
 
@@ -29,7 +28,7 @@ const PaymentPage = () => {
       } catch (error) {
         console.error("Error fetching listing:", error);
       } finally {
-        setLoading(false); // Set loading to false after fetching data
+        setLoading(false);
       }
     };
 
@@ -88,35 +87,44 @@ const PaymentPage = () => {
 
     if (error) {
       console.log("[error]", error);
+      if (error.type === "card_error" || error.type === "validation_error") {
+        alert(error.message);
+      } else {
+        alert("An unexpected error occurred.");
+      }
     } else {
       console.log("[PaymentIntent]", paymentIntent);
 
-      // Handle successful payment here
-      try {
-        const response = await fetch(
-          `${API_KEY}/listings/${id}/complete-purchase`,
-          {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify({ paymentIntentId: paymentIntent.id }),
-          }
-        );
+      if (paymentIntent.status === 'succeeded') {
+        try {
+          const response = await fetch(
+            `${API_KEY}/listings/${id}/complete-purchase`,
+            {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+              body: JSON.stringify({ paymentIntentId: paymentIntent.id }),
+            }
+          );
 
-        if (response.ok) {
-          setSuccess(true);
-          navigate("/confirmation"); // Redirect to a confirmation page
-        } else {
-          console.error("Failed to update transaction status on the server");
+          if (response.ok) {
+            setSuccess(true);
+            navigate("/confirmation");
+          } else {
+            console.error("Failed to update transaction status on the server");
+          }
+        } catch (error) {
+          console.error(
+            "Error updating transaction status on the server:",
+            error
+          );
         }
-      } catch (error) {
-        console.error(
-          "Error updating transaction status on the server:",
-          error
-        );
+      }
+      else {
+        alert("Payment was not successful. Please try another payment method.");
       }
     }
   };
