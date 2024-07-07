@@ -13,7 +13,7 @@ const PaymentPage = () => {
   const navigate = useNavigate();
   const [clientSecret, setClientSecret] = useState("");
   const [listing, setListing] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
@@ -133,7 +133,7 @@ const PaymentPage = () => {
     <div className="paymentPageContainer">
       <AppHeader />
       <div className="paymentContent">
-        {loading ? (
+        {isLoading ? (
           <p>Loading...</p>
         ) : listing ? (
           <>
