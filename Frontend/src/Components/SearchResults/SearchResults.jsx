@@ -8,6 +8,8 @@ import {
   getSubcategoryName,
 } from "../utils/ListingInfoUtil.js";
 import { getInitials } from "../utils/initialsUtils.js";
+import useLoading from "../CustomHooks/useLoading.jsx";
+import Loading from "../Loading/Loading.jsx";
 import "./SearchResults.css";
 
 
@@ -17,8 +19,14 @@ const SearchResults = () => {
   const location = useLocation();
   const [listings, setListings] = useState([]);
   const [users, setUsers] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+   const {
+     isLoading,
+     error,
+     startLoading,
+     stopLoading,
+     setErrorState,
+     resetError,
+   } = useLoading();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,8 +51,8 @@ const SearchResults = () => {
         }
       });
 
-      setIsLoading(true);
-      setError(null);
+      startLoading();
+      resetError();
 
       try {
         const response = await fetch(
@@ -58,9 +66,9 @@ const SearchResults = () => {
         setListings(data.listings);
         setUsers(data.users);
       } catch (err) {
-        setError(err.message);
+       setErrorState(err.message);
       } finally {
-        setIsLoading(false);
+        stopLoading();
       }
     };
 
@@ -76,7 +84,7 @@ const SearchResults = () => {
       >
         {(listing) => <ListingItem key={listing.id} {...listing} />}
       </ListingsContainer>
-      {isLoading && <p>Loading...</p>}
+      {isLoading && <Loading />}
       {error && <p className="error">{error}</p>}
       <div className="users">
         {users.map((user) => (
