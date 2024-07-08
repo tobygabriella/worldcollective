@@ -22,7 +22,7 @@ const AppHeader = () => {
 
   const showIcons = location.pathname === '/userProfile';
   const showWelcome = location.pathname === '/';
-  
+
   const initials = getInitials(user?.firstname, user?.lastname);
 
 
@@ -57,7 +57,11 @@ const AppHeader = () => {
             )}
             {showIcons && (
               <div className="icons">
-                <div className="iconWrapper" data-tooltip="Notification Center">
+                <div
+                  className="iconWrapper"
+                  data-tooltip="Notification Center"
+                  onClick={() => navigate("/notifications")}
+                >
                   <i className="fas fa-bell"></i>
                 </div>
                 <Link
