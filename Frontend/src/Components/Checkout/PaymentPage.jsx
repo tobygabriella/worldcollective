@@ -86,15 +86,12 @@ const PaymentPage = () => {
     );
 
     if (error) {
-      console.log("[error]", error);
       if (error.type === "card_error" || error.type === "validation_error") {
         alert(error.message);
       } else {
         alert("An unexpected error occurred.");
       }
     } else {
-      console.log("[PaymentIntent]", paymentIntent);
-
       if (paymentIntent.status === 'succeeded') {
         try {
           const response = await fetch(
