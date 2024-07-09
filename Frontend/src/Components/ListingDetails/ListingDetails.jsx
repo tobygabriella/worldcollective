@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../Contexts/AuthContext";
 import AppHeader from "../Headers/AppHeader";
+import useLoading from "../CustomHooks/useLoading.jsx";
+import Loading from "../Loading/Loading.jsx";
 import "./ListingDetails.css";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
@@ -10,16 +12,20 @@ const ListingDetails = () => {
   const { id } = useParams();
   const [listing, setListing] = useState(null);
   const { user } = useAuth();
+  const { isLoading, startLoading, stopLoading } = useLoading();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchListing = async () => {
+      startLoading();
       try {
         const response = await fetch(`${API_KEY}/listings/${id}`);
         const data = await response.json();
         setListing(data);
       } catch (error) {
         console.error("Error fetching listing:", error);
+      } finally {
+        stopLoading();
       }
     };
 
@@ -49,6 +55,10 @@ const ListingDetails = () => {
   const handleBuyNow = () => {
     navigate(`/buy/${id}`);
   };
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <div className="listingDetailsContainer">

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import AppHeader from "../Headers/AppHeader";
+import Loading from "../Loading/Loading.jsx";
+import useLoading from "../CustomHooks/useLoading.jsx";
 import "./PaymentPage.css";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
@@ -13,11 +15,13 @@ const PaymentPage = () => {
   const navigate = useNavigate();
   const [clientSecret, setClientSecret] = useState("");
   const [listing, setListing] = useState(null);
-  const [isLoading, setLoading] = useState(true);
+ const { isLoading, error, startLoading, stopLoading} =
+   useLoading();
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     const fetchListing = async () => {
+      startLoading();
       try {
         const response = await fetch(`${API_KEY}/listings/${id}`);
         if (!response.ok) {
@@ -28,7 +32,7 @@ const PaymentPage = () => {
       } catch (error) {
         console.error("Error fetching listing:", error);
       } finally {
-        setLoading(false);
+       stopLoading();
       }
     };
 
@@ -125,6 +129,10 @@ const PaymentPage = () => {
       }
     }
   };
+
+   if (isLoading) {
+     return <Loading />;
+   }
 
   return (
     <div className="paymentPageContainer">

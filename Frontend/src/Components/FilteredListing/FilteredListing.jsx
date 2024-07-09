@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import ListingItem from "../ListingItem/ListingItem";
 import ListingsContainer from "../ListingsContainer/ListingsContainer";
-import {getConditionName,getCategoryName,
-} from "../utils/ListingInfoUtil.js";
+import { getConditionName, getCategoryName } from "../utils/ListingInfoUtil.js";
+import useLoading from "../CustomHooks/useLoading.jsx";
+import Loading from "../Loading/Loading.jsx";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -11,10 +12,15 @@ const FilteredListings = () => {
   const { filterType, filterValue } = useParams();
   const [listings, setListings] = useState([]);
   const location = useLocation();
+    const {
+      isLoading,
+      startLoading,
+      stopLoading,
+    } = useLoading();
 
   useEffect(() => {
-
     const fetchListings = async () => {
+       startLoading();
       try {
         const queryParams = new URLSearchParams(location.search);
         const translatedParams = new URLSearchParams();
@@ -35,11 +41,17 @@ const FilteredListings = () => {
         setListings(data);
       } catch (error) {
         console.error("Error fetching listings:", error);
+      } finally {
+        stopLoading();
       }
     };
 
     fetchListings();
   }, [filterType, filterValue, location.search]);
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <ListingsContainer
