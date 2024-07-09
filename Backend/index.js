@@ -1,6 +1,8 @@
 require("dotenv").config();
 
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const cors = require("cors");
@@ -17,6 +19,13 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const saltRounds = 14;
 const secretKey = process.env.JWT_SECRET;
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    credentials: true,
+  },
+});
 const port = 3002;
 
 app.use(bodyParser.json());
@@ -28,8 +37,17 @@ app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
+    methods: ["GET", "POST","DELETE"],
   })
 );
+
+io.on("connection", (socket) => {
+  console.log("a user connected");
+
+  socket.on("disconnect", () => {
+    console.log("user disconnected");
+  });
+});
 
 const verifyToken = (req, res, next) => {
   const token = req.cookies.token;
@@ -303,16 +321,16 @@ app.get("/search", async (req, res) => {
       },
     });
 
-     const users = await prisma.user.findMany({
-       where: {
-         username: { contains: query, mode: "insensitive" },
-       },
-       select: {
-         id: true,
-         username: true,
-         bio: true,
-       },
-     });
+    const users = await prisma.user.findMany({
+      where: {
+        username: { contains: query, mode: "insensitive" },
+      },
+      select: {
+        id: true,
+        username: true,
+        bio: true,
+      },
+    });
 
     // Combine results into a single response object
     const results = {
@@ -371,6 +389,31 @@ app.post("/users/:id/follow", verifyToken, async (req, res) => {
         followerId: parseInt(followerId),
         followingId: parseInt(followingId),
       },
+    });
+
+    // Fetch follower and following user details
+    const follower = await prisma.user.findUnique({
+      where: { id: parseInt(followerId) },
+    });
+
+    const followingUser = await prisma.user.findUnique({
+      where: { id: parseInt(followingId) },
+    });
+
+    // Create a notification for the user being followed
+    const notificationContent = `@${follower.username} just followed you.`;
+    const notification = await prisma.notification.create({
+      data: {
+        content: notificationContent,
+        userId: parseInt(followingId),
+        isRead: false,
+      },
+    });
+
+    io.emit("notification", {
+      type: "follow",
+      userId: parseInt(followingId),
+      message: notificationContent,
     });
 
     res.status(201).json(follow);
@@ -441,6 +484,45 @@ app.get("/users/:id/followings", async (req, res) => {
       .json({ error: "Something went wrong while fetching followings" });
   }
 });
+
+app.post("/notifications", verifyToken, async (req, res) => {
+  const { content, userId } = req.body;
+
+  try {
+    const notification = await prisma.notification.create({
+      data: {
+        content,
+        userId: parseInt(userId),
+        isRead: false,
+      },
+    });
+    res.status(201).json(notification);
+  } catch (error) {
+    console.error("Error creating notification:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while creating the notification" });
+  }
+});
+
+// Get notifications for the current user
+app.get("/notifications", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: { userId: parseInt(userId) },
+      orderBy: { createdAt: "desc" },
+    });
+    res.status(200).json(notifications);
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching the notifications" });
+  }
+});
+
 // Like an item
 app.post("/listings/:id/like", verifyToken, async (req, res) => {
   const { id: itemId } = req.params;
@@ -463,6 +545,27 @@ app.post("/listings/:id/like", verifyToken, async (req, res) => {
         userId: parseInt(userId),
         itemId: parseInt(itemId),
       },
+    });
+    //finding the seller id of the listing liked
+    const listing = await prisma.listing.findUnique({
+      where: { id: parseInt(itemId) },
+      include: { seller: true },
+    });
+
+    const notificationContent = `Your item ${listing.title} has been liked.`;
+    await prisma.notification.create({
+      data: {
+        content: notificationContent,
+        userId: listing.sellerId,
+        isRead: false,
+      },
+    });
+
+    io.emit("notification", {
+      type: "like",
+      itemId: itemId,
+      userId: listing.sellerId,
+      message: notificationContent,
     });
 
     res.status(201).json(like);
@@ -521,7 +624,9 @@ app.get("/wishlist", verifyToken, async (req, res) => {
     res.status(200).json(listings);
   } catch (error) {
     console.error("Error fetching liked items:", error);
-    res.status(500).json({ error: "Something went wrong while fetching liked items" });
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching liked items" });
   }
 });
 
@@ -560,11 +665,9 @@ app.post("/create-payment-intent", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating payment intent:", error);
-    res
-      .status(500)
-      .json({
-        error: "Something went wrong while creating the payment intent",
-      });
+    res.status(500).json({
+      error: "Something went wrong while creating the payment intent",
+    });
   }
 });
 
@@ -589,6 +692,52 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
       },
     });
 
+    //notification for the seller
+    const sellerId = updatedListing.sellerId;
+    const notificationContent = `Your item "${updatedListing.title}" has been purchased.`;
+    const notification = await prisma.notification.create({
+      data: {
+        content: notificationContent,
+        userId: sellerId,
+        isRead: false,
+      },
+    });
+
+    io.emit("notification", {
+      type: "purchase",
+      itemId: listingId,
+      userId: sellerId,
+      message: notificationContent,
+    });
+
+    // Fetch users who have liked this item
+    const likes = await prisma.like.findMany({
+      where: { itemId: parseInt(listingId) },
+      include: { user: true },
+    });
+
+    // Create notifications for users who liked this item
+    for (const like of likes) {
+      const user = like.user;
+      if (user.id !== userId) {
+        const likeNotificationContent = `An item you liked "${updatedListing.title}" has been purchased.`;
+        await prisma.notification.create({
+          data: {
+            content: likeNotificationContent,
+            userId: user.id,
+            isRead: false,
+          },
+        });
+
+        io.emit("notification", {
+          type: "like-purchase",
+          itemId: listingId,
+          userId: user.id,
+          message: likeNotificationContent,
+        });
+      }
+    }
+
     res
       .status(200)
       .json({ message: "Purchase completed successfully", transaction });
@@ -600,9 +749,8 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
   }
 });
 
-
 app.post("/register", async (req, res) => {
-  const { username, password, firstname, lastname} = req.body;
+  const { username, password, firstname, lastname } = req.body;
   try {
     const existingUser = await prisma.user.findUnique({ where: { username } });
     if (existingUser) {
@@ -677,6 +825,6 @@ app.get("/protected", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

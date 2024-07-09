@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "/Users/tobygabriella/Desktop/MetaU Projects/world-collective/Frontend/src/Components/Contexts/AuthContext.jsx";
+import { SocketProvider } from "./Components/Contexts/SocketContext.jsx";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import Loading from "./Components/Loading/Loading";
@@ -34,37 +35,44 @@ const PaymentPage = lazy(() => import("./Components/Checkout/PaymentPage.jsx"));
 const ConfirmationPage = lazy(() =>
   import("./Components/Checkout/ConfirmationPage.jsx")
 );
+const Notifications = lazy(() =>
+  import("./Components/Notifications/Notifications.jsx")
+);
+
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <Suspense fallback={<Loading />}>
-          <Routes>
-            <Route path="/login" element={<LogIn />} />
-            <Route path="/register" element={<SignUp />} />
-            <Route path="/" element={<Home />} />
-            <Route path="/userProfile" element={<UserProfile />} />
-            <Route path="/createListing" element={<CreateListing />} />
-            <Route path="/listings/:id" element={<ListingDetails />} />
-            <Route
-              path="/listings/:filterType/:filterValue"
-              element={<FilteredListing />}
-            />
-            <Route path="/search" element={<SearchResults />} />
-            <Route path="/users/:username" element={<OtherUsersProfile />} />
-            <Route path="/wishlist" element={<Wishlist />} />
-            <Route
-              path="/buy/:id"
-              element={
-                <Elements stripe={stripePromise}>
-                  <PaymentPage />
-                </Elements>
-              }
-            />
-            <Route path="/confirmation" element={<ConfirmationPage />} />
-          </Routes>
-        </Suspense>
+        <SocketProvider>
+          <Suspense fallback={<Loading />}>
+            <Routes>
+              <Route path="/login" element={<LogIn />} />
+              <Route path="/register" element={<SignUp />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/userProfile" element={<UserProfile />} />
+              <Route path="/createListing" element={<CreateListing />} />
+              <Route path="/listings/:id" element={<ListingDetails />} />
+              <Route
+                path="/listings/:filterType/:filterValue"
+                element={<FilteredListing />}
+              />
+              <Route path="/search" element={<SearchResults />} />
+              <Route path="/users/:username" element={<OtherUsersProfile />} />
+              <Route path="/wishlist" element={<Wishlist />} />
+              <Route
+                path="/buy/:id"
+                element={
+                  <Elements stripe={stripePromise}>
+                    <PaymentPage />
+                  </Elements>
+                }
+              />
+              <Route path="/confirmation" element={<ConfirmationPage />} />
+              <Route path="/notifications" element={<Notifications />} />
+            </Routes>
+          </Suspense>
+        </SocketProvider>
       </AuthProvider>
     </Router>
   );
