@@ -12,6 +12,7 @@ const cloudinary = require("cloudinary").v2;
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const bodyParser = require("body-parser");
 const { buildFilters } = require("./Utils/buildFilters");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const saltRounds = 14;
 const secretKey = process.env.JWT_SECRET;
@@ -544,6 +545,61 @@ app.get("/listings/:id/like-status", verifyToken, async (req, res) => {
       .json({ error: "Something went wrong while fetching liked status" });
   }
 });
+
+app.post("/create-payment-intent", verifyToken, async (req, res) => {
+  const { amount } = req.body;
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount * 100, // Amount in cents
+      currency: "usd",
+    });
+
+    res.status(201).json({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (error) {
+    console.error("Error creating payment intent:", error);
+    res
+      .status(500)
+      .json({
+        error: "Something went wrong while creating the payment intent",
+      });
+  }
+});
+
+app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
+  const { id: listingId } = req.params;
+  const { paymentIntentId } = req.body;
+  const userId = req.user.id;
+
+  try {
+    // Update listing status to sold
+    const updatedListing = await prisma.listing.update({
+      where: { id: parseInt(listingId) },
+      data: { status: "sold" },
+    });
+
+    // Record transaction details
+    const transaction = await prisma.transaction.create({
+      data: {
+        listingId: parseInt(listingId),
+        buyerId: parseInt(userId),
+        paymentIntentId,
+      },
+    });
+
+    res
+      .status(200)
+      .json({ message: "Purchase completed successfully", transaction });
+  } catch (error) {
+    console.error("Error completing purchase:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while completing the purchase" });
+  }
+});
+
 
 app.post("/register", async (req, res) => {
   const { username, password, firstname, lastname} = req.body;

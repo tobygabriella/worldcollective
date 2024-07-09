@@ -46,6 +46,10 @@ const ListingDetails = () => {
     }
   };
 
+  const handleBuyNow = () => {
+    navigate(`/buy/${id}`);
+  };
+
   return (
     <div className="listingDetailsContainer">
       <AppHeader />
@@ -53,12 +57,17 @@ const ListingDetails = () => {
         <div className="listingDetails">
           <div className="listingImages">
             {listing.imageUrls.map((url, index) => (
-              <img
-                key={index}
-                src={url}
-                alt={listing.title}
-                className="listingImage"
-              />
+              <div className="imageWrapper" key={index}>
+                <img
+                  key={index}
+                  src={url}
+                  alt={listing.title}
+                  className="listingImage"
+                />
+                {listing.status === "sold" && (
+                  <div className="soldOverlay">SOLD</div>
+                )}
+              </div>
             ))}
           </div>
           <div className="listingInfo">
@@ -73,11 +82,17 @@ const ListingDetails = () => {
             <p>
               <strong>Condition:</strong> {listing.condition}
             </p>
-            {user?.id === listing.sellerId && (
+            {user?.id === listing.sellerId ? (
               <div className="listingActions">
                 <button>Edit Listing</button>
                 <button onClick={handleDelete}>Delete Listing</button>
               </div>
+            ) : (
+              listing.status !== "sold" && (
+                <button className="buyNowButton" onClick={handleBuyNow}>
+                  Buy Now
+                </button>
+              )
             )}
             <div className="sellerInfo">
               <img

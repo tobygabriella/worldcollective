@@ -6,8 +6,21 @@ const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const ListingItem = ({ id, title, price, imageUrls }) => {
   const [liked, setLiked] = useState(false);
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
+    const fetchListingStatus = async () => {
+      try {
+        const response = await fetch(`${API_KEY}/listings/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setStatus(data.status);
+        }
+      } catch (error) {
+        console.error("Error fetching listing status:", error);
+      }
+    };
+
     const fetchLikedStatus = async () => {
       try {
         const response = await fetch(`${API_KEY}/listings/${id}/like-status`, {
@@ -23,6 +36,7 @@ const ListingItem = ({ id, title, price, imageUrls }) => {
       }
     };
 
+    fetchListingStatus();
     fetchLikedStatus();
   }, [id]);
 
@@ -51,7 +65,10 @@ const ListingItem = ({ id, title, price, imageUrls }) => {
   return (
     <Link to={`/listings/${id}`} className="listingItemLink">
       <div className="listingItem">
-        <img src={imageUrls[0]} alt={title} className="listingItemImage" />
+        <div className="imageWrapper">
+          <img src={imageUrls[0]} alt={title} className="listingItemImage" />
+          {status === "sold" && <div className="soldOverlay">SOLD</div>}
+        </div>
         <div className="listingItemDetails">
           <h3 className="listingItemTitle">{title}</h3>
           <p className="listingItemPrice">${price}</p>

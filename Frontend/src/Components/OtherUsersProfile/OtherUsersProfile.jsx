@@ -15,7 +15,7 @@ const OtherUsersProfile = () => {
   const { username } = useParams();
   const { user: currentUser } = useAuth();
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
@@ -61,7 +61,7 @@ const OtherUsersProfile = () => {
       fetchCounts(user.id, setFollowersCount, setFollowingCount)
     );
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 

@@ -27,6 +27,7 @@ model User {
   notifications  Notification[]
   followers      Follow[]      @relation("following")
   followings     Follow[]      @relation("follower")
+  transactions   Transaction[]   @relation("BuyerTransactions")
   }
 
   model Follow {
@@ -54,7 +55,19 @@ model User {
   updatedAt   DateTime  @updatedAt
   status      String
   likes       Like[]
+  transactions Transaction[]  @relation("ListingTransactions")
 }
+
+ model Transaction {
+  id              Int       @id @default(autoincrement())
+  listingId       Int
+  buyerId         Int
+  paymentIntentId String
+  createdAt       DateTime  @default(now())
+  listing         Listing   @relation("ListingTransactions", fields: [listingId], references: [id])
+  buyer           User      @relation("BuyerTransactions", fields: [buyerId], references: [id])
+}
+
 
 model Like {
   id        Int       @id @default(autoincrement())
