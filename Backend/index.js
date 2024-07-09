@@ -406,6 +406,7 @@ app.post("/users/:id/follow", verifyToken, async (req, res) => {
         userId: parseInt(followingId),
         isRead: false,
         type: NotificationType.FOLLOW,
+        usernameTarget: follower.username,
       },
     });
 
@@ -413,6 +414,7 @@ app.post("/users/:id/follow", verifyToken, async (req, res) => {
       type: NotificationType.FOLLOW,
       userId: parseInt(followingId),
       message: notificationContent,
+      usernameTarget: follower.username,
     });
 
     res.status(201).json(follow);
@@ -494,6 +496,8 @@ app.post("/notifications", verifyToken, async (req, res) => {
         userId: parseInt(userId),
         isRead: false,
         type,
+        userIdTarget: userIdTarget ? parseInt(userIdTarget) : null,
+        listingId: listingId ? parseInt(listingId) : null,
       },
     });
     res.status(201).json(notification);
@@ -602,6 +606,8 @@ app.post("/listings/:id/like", verifyToken, async (req, res) => {
         userId: listing.sellerId,
         isRead: false,
         type: NotificationType.LIKE,
+        listingId: listing.id,
+        listingImage: listing.imageUrls[0],
       },
     });
 
@@ -610,6 +616,8 @@ app.post("/listings/:id/like", verifyToken, async (req, res) => {
       itemId: itemId,
       userId: listing.sellerId,
       message: notificationContent,
+      listingId: listing.id,
+      listingImage: listing.imageUrls[0],
     });
 
     res.status(201).json(like);
@@ -736,6 +744,7 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
       },
     });
 
+    const listingImage = updatedListing.imageUrls[0];
     //notification for the seller
     const sellerId = updatedListing.sellerId;
     const notificationContent = `Your item "${updatedListing.title}" has been purchased.`;
@@ -745,6 +754,8 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
         userId: sellerId,
         isRead: false,
         type: NotificationType.PURCHASE,
+        listingId: listingId,
+        listingImage: listingImage,
       },
     });
 
@@ -753,6 +764,8 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
       itemId: listingId,
       userId: sellerId,
       message: notificationContent,
+      listingId: listingId,
+      listingImage: listingImage,
     });
 
     // Fetch users who have liked this item
@@ -772,6 +785,8 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
             userId: user.id,
             isRead: false,
             type: NotificationType.LIKE_PURCHASE,
+            listingId: listingId,
+            listingImage: listingImage,
           },
         });
 
@@ -780,6 +795,8 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
           itemId: listingId,
           userId: user.id,
           message: likeNotificationContent,
+          listingId: listingId,
+          listingImage: listingImage,
         });
       }
     }
