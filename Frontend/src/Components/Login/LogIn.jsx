@@ -46,7 +46,7 @@ const LogIn = () => {
       <AuthHeader />
       </header>
       <div className="loginBody">
-        <div className="circle"></div>
+        <div className="loginCircle"></div>
         <div className="signupPrompt">
           Don’t have an account?  <Link to={"/register"} className="signupLink" >Sign up</Link>
         </div>

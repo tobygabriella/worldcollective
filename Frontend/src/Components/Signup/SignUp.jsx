@@ -47,7 +47,7 @@ const Signup = () => {
         <AuthHeader />
       </header>
       <div className="signupBody">
-        <div className="circle"></div>
+        <div className="signupCircle"></div>
         <div className="loginPrompt">
           Already have an account?{" "}
           <Link to={"/login"} className="viewButton">
