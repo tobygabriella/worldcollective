@@ -38,7 +38,9 @@ const ConfirmationPage = lazy(() =>
 const Notifications = lazy(() =>
   import("./Components/Notifications/Notifications.jsx")
 );
-
+const ListingDetailContainer = lazy(() =>
+  import("./Components/DetailContainer/ListingDetailContainer.jsx")
+);
 
 function App() {
   return (
@@ -52,7 +54,17 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/userProfile" element={<UserProfile />} />
               <Route path="/createListing" element={<CreateListing />} />
-              <Route path="/listings/:id" element={<ListingDetails />} />
+              <Route path="/listings/:id" element={<ListingDetailContainer />}>
+                <Route index element={<ListingDetails />} />
+                <Route
+                  path="buy"
+                  element={
+                    <Elements stripe={stripePromise}>
+                      <PaymentPage />
+                    </Elements>
+                  }
+                />
+              </Route>
               <Route
                 path="/listings/:filterType/:filterValue"
                 element={<FilteredListing />}
@@ -60,14 +72,6 @@ function App() {
               <Route path="/search" element={<SearchResults />} />
               <Route path="/users/:username" element={<OtherUsersProfile />} />
               <Route path="/wishlist" element={<Wishlist />} />
-              <Route
-                path="/buy/:id"
-                element={
-                  <Elements stripe={stripePromise}>
-                    <PaymentPage />
-                  </Elements>
-                }
-              />
               <Route path="/confirmation" element={<ConfirmationPage />} />
               <Route path="/notifications" element={<Notifications />} />
             </Routes>
