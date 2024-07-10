@@ -3,6 +3,16 @@
   margin-top: 80px;
 }
 
+.importantNotifications,
+.otherNotifications {
+  margin-bottom: 20px;
+}
+
+h3 {
+  margin-bottom: 10px;
+  font-size: 1.2em;
+}
+
 .notificationsPage h2 {
   font-size: 24px;
   margin-bottom: 20px;

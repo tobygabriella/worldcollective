@@ -14,30 +14,32 @@ export const SocketProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    const newSocket = io(`${API_KEY}`);
-    setSocket(newSocket);
+   const fetchNotifications = async () => {
+     try {
+       const response = await fetch(`${API_KEY}/notifications`, {
+         method: "GET",
+         credentials: "include",
+         headers: {
+           Authorization: `Bearer ${localStorage.getItem("token")}`,
+         },
+       });
+       if (response.ok) {
+         const data = await response.json();
+         setNotifications(data);
+         setUnreadCount(data.filter((notif) => !notif.isRead).length);
+       } else {
+         throw new Error("Failed to fetch notifications");
+       }
+     } catch (error) {
+       console.error("Error fetching notifications:", error);
+     }
+   };
 
-    const fetchNotifications = async () => {
-      try {
-        const response = await fetch(`${API_KEY}/notifications`, {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setNotifications(data);
-          setUnreadCount(data.filter((notif) => !notif.isRead).length);
-        } else {
-          throw new Error("Failed to fetch notifications");
-        }
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      }
-    };
+  useEffect(() => {
+    const newSocket = io(`${API_KEY}`, {
+      query: { userId: localStorage.getItem("userId") },
+    });
+    setSocket(newSocket);
 
     fetchNotifications();
 
@@ -48,8 +50,16 @@ export const SocketProvider = ({ children }) => {
       }
     });
 
-    return () => newSocket.close();
+    newSocket.on("connect", () => {
+      fetchNotifications(); // Fetch unread notifications on reconnect
+    });
+
+   return () => {
+     newSocket.close();
+   };
   }, []);
+
+
 
   const markAsRead = async () => {
     try {
