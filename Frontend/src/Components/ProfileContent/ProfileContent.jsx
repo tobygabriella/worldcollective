@@ -1,9 +1,14 @@
-
+import React, { useEffect, useState } from "react";
 import AppHeader from "../Headers/AppHeader";
 import ListingItem from "../ListingItem/ListingItem";
 import ListingsContainer from "../ListingsContainer/ListingsContainer";
-import "./ProfileContent.css";
 import { getInitials } from "../utils/initialsUtils";
+import { fetchListingsWithStatusAndLiked } from "../utils/likeStatusUtil";
+import useLoading from "../CustomHooks/useLoading.jsx";
+import Loading from "../Loading/Loading.jsx";
+import "./ProfileContent.css";
+
+const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const ProfileContent = ({
   user,
@@ -14,9 +19,31 @@ const ProfileContent = ({
   followersCount,
   followingCount,
 }) => {
-
+  const [listings, setListings] = useState([]);
+  const { isLoading, startLoading, stopLoading } = useLoading();
   const initials = getInitials(user.firstname, user.lastname);
-  
+
+  useEffect(() => {
+    const fetchListings = async () => {
+      startLoading();
+      try {
+        const listingsWithStatusAndLiked =
+          await fetchListingsWithStatusAndLiked(user.listings);
+        setListings(listingsWithStatusAndLiked);
+      } catch (error) {
+        console.error("Error fetching listings:", error);
+      } finally {
+        stopLoading();
+      }
+    };
+
+    fetchListings();
+  }, [user.listings]);
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
   return (
     <div className="profileContainer">
       <AppHeader />
@@ -45,7 +72,7 @@ const ProfileContent = ({
       <div className="userListings">
         <ListingsContainer
           title={title}
-          listings={user.listings}
+          listings={listings}
           showFilters={false}
         >
           {(listing) => <ListingItem key={listing.id} {...listing} />}

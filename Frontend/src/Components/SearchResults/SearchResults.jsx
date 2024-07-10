@@ -7,11 +7,11 @@ import {
   getCategoryName,
   getSubcategoryName,
 } from "../utils/ListingInfoUtil.js";
+import { fetchListingsWithStatusAndLiked } from "../utils/likeStatusUtil.js";
 import { getInitials } from "../utils/initialsUtils.js";
 import useLoading from "../CustomHooks/useLoading.jsx";
 import Loading from "../Loading/Loading.jsx";
 import "./SearchResults.css";
-
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -19,14 +19,14 @@ const SearchResults = () => {
   const location = useLocation();
   const [listings, setListings] = useState([]);
   const [users, setUsers] = useState([]);
-   const {
-     isLoading,
-     error,
-     startLoading,
-     stopLoading,
-     setErrorState,
-     resetError,
-   } = useLoading();
+  const {
+    isLoading,
+    error,
+    startLoading,
+    stopLoading,
+    setErrorState,
+    resetError,
+  } = useLoading();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,10 +63,12 @@ const SearchResults = () => {
         }
 
         const data = await response.json();
-        setListings(data.listings);
+        const listingsWithStatusAndLiked =
+          await fetchListingsWithStatusAndLiked(data.listings);
+        setListings(listingsWithStatusAndLiked);
         setUsers(data.users);
       } catch (err) {
-       setErrorState(err.message);
+        setErrorState(err.message);
       } finally {
         stopLoading();
       }
