@@ -1,0 +1,74 @@
+/* ViewReviewModal.css */
+
+.reviewsModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.reviewsModal {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 80%;
+  max-width: 600px;
+  max-height: 80%;
+  overflow-y: auto;
+  position: relative;
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.reviewsList {
+  margin-top: 20px;
+}
+
+.reviewItem {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eaeaea;
+  padding-bottom: 10px;
+}
+
+.reviewListingImage {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 5px;
+  margin-right: 20px;
+}
+
+.reviewText {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.reviewRating .star {
+  color: black;
+}
+
+.reviewRating .star.filled {
+  color: #ffba00;
+}
+
+.reviewTime {
+  color: #757575;
+  font-size: 0.875rem;
+  margin-top: 5px;
+}
