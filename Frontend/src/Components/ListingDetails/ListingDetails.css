@@ -105,3 +105,19 @@
     align-items: center;
   }
 }
+.circle {
+  width: 40px;
+  height: 40px;
+  background-color: red;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.circleInitials {
+  font-size: 20px;
+  font-weight: bold;
+  text-decoration: none;
+}
