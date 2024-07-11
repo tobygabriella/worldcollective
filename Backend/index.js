@@ -43,19 +43,25 @@ app.use(
     methods: ["GET", "POST", "DELETE", "PUT"],
   })
 );
-
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
-  // Mark user as online
-  socket.join(userId);
+
+  if (!userId) {
+    socket.disconnect(true);
+    return;
+  }
+  socket.userId = userId;
+
   socket.on("disconnect", () => {
-    socket.leave(userId);
+    delete socket.userId;
   });
 });
 
 const sendNotification = async (notificationData) => {
   const userId = notificationData.userId;
-  const isOnline = io.sockets.adapter.rooms.has(userId);
+  const userSockets = Array.from(io.sockets.sockets.values()).filter(
+    (socket) => socket.userId == userId
+  );
 
   const recentTimeframe = subDays(new Date(), 5);
   const threshold = 5;
@@ -77,27 +83,12 @@ const sendNotification = async (notificationData) => {
     ...notificationData,
     isImportant,
   };
+  const savedNotification = await prisma.notification.create({
+    data: notification,
+  });
 
-  if (isOnline) {
-    io.to(userId).emit("notification", notification);
-  } else {
-    // Store notification in the database
-    await prisma.notification.create({ data: notification });
-  }
-};
-
-
-const verifyToken = (req, res, next) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).json({ message: "No token, authorization denied" });
-  }
-  try {
-    const decoded = jwt.verify(token, secretKey);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    res.status(401).json({ message: "Token is not valid" });
+  if (userSockets.length > 0) {
+    userSockets[0].emit("notification", savedNotification);
   }
 };
 
@@ -132,7 +123,22 @@ const updateImportantNotificationTypes = async () => {
   }
 };
 
-setInterval(updateImportantNotificationTypes, 24 * 60 * 60 * 1000);
+// calls the function every minute to set the notification type to important
+setInterval(updateImportantNotificationTypes, 60 * 1000);
+
+const verifyToken = (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).json({ message: "No token, authorization denied" });
+  }
+  try {
+    const decoded = jwt.verify(token, secretKey);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: "Token is not valid" });
+  }
+};
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -565,6 +571,7 @@ app.post("/notifications", verifyToken, async (req, res) => {
         type,
         userIdTarget: userIdTarget ? parseInt(userIdTarget) : null,
         listingId: listingId ? parseInt(listingId) : null,
+        sellerId: sellerId ? parseInt(sellerId) : null,
       },
     });
     res.status(201).json(notification);
@@ -602,7 +609,7 @@ app.get("/notifications", verifyToken, async (req, res) => {
   }
 });
 
-app.post("/notifications/mark-as-read", verifyToken, async (req, res) => {
+app.post("/notifications/mark-all-as-read", verifyToken, async (req, res) => {
   const userId = req.user.id;
 
   try {
@@ -617,6 +624,24 @@ app.post("/notifications/mark-as-read", verifyToken, async (req, res) => {
     res
       .status(500)
       .json({ error: "Something went wrong while updating notifications" });
+  }
+});
+
+app.post("/notifications/:id/mark-as-read", verifyToken, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await prisma.notification.update({
+      where: { id: parseInt(id) },
+      data: { isRead: true },
+    });
+
+    res.status(200).json({ message: "Notification marked as read" });
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while updating the notification" });
   }
 });
 
@@ -843,6 +868,7 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
 
     const sellerNotification = {
       content: notificationContent,
+      sellerId: sellerId,
       userId: sellerId,
       isRead: false,
       type: NotificationType.PURCHASE,
@@ -852,6 +878,19 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
 
     await sendNotification(sellerNotification);
 
+    const buyerNotificationContent = `You just successfully purchased "${updatedListing.title}". Please leave a review!`;
+
+    const buyerNotification = {
+      content: buyerNotificationContent,
+      sellerId: sellerId,
+      userId: userId,
+      isRead: false,
+      type: NotificationType.REVIEW_REMINDER,
+      listingId: parseInt(listingId),
+      listingImage: listingImage,
+    };
+
+    await sendNotification(buyerNotification);
     // Fetch users who have liked this item
     const likes = await prisma.like.findMany({
       where: { itemId: parseInt(listingId) },
@@ -929,9 +968,9 @@ app.post("/listings/:id/reviews", verifyToken, async (req, res) => {
       data: {
         content,
         rating,
-        reviewerId,
-        sellerId: parseInt(sellerId),
-        listingId: parseInt(listingId),
+        reviewer: { connect: { id: reviewerId } },
+        seller: { connect: { id: parseInt(sellerId) } },
+        listing: { connect: { id: parseInt(listingId) } },
       },
     });
 
@@ -985,7 +1024,6 @@ app.get("/users/:id/reviews", async (req, res) => {
       .json({ error: "Something went wrong while fetching the reviews" });
   }
 });
-
 
 app.post("/register", async (req, res) => {
   const { username, password, firstname, lastname } = req.body;
