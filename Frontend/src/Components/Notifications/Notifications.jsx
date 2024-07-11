@@ -5,27 +5,32 @@ import useLoading from "../CustomHooks/useLoading.jsx";
 import "./Notifications.css";
 import AppHeader from "../Headers/AppHeader";
 import { useNavigate } from "react-router-dom";
+import CreateReviewModal from "../Review/CreateReviewModal.jsx";
+import useReview from "../CustomHooks/useReview.jsx";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const Notifications = () => {
   const { notifications, markAsRead } = useSocket();
-  const { isLoading, stopLoading } = useLoading();
+  const { startLoading, isLoading, stopLoading } = useLoading();
   const navigate = useNavigate();
+  const [currentSellerId, setCurrentSellerId] = useState(null);
+  const [currentListingId, setCurrentListingId] = useState(null);
+  const {
+    isReviewModalOpen,
+    openReviewModal,
+    closeReviewModal,
+    handleReviewSubmit,
+    successMessage,
+    errorMessage,
+  } = useReview();
 
   useEffect(() => {
+    startLoading();
     if (notifications.length > 0) {
       stopLoading();
     }
   }, [notifications]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      markAsRead();
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [markAsRead]);
 
   if (isLoading) {
     return <Loading />;
@@ -40,6 +45,7 @@ const Notifications = () => {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
+      markAsRead(notif.id);
     } catch (error) {
       console.error("Error interacting with notification:", error);
     }
@@ -52,6 +58,10 @@ const Notifications = () => {
       notif.type === "LIKE_PURCHASE"
     ) {
       navigate(`/listings/${notif.listingId}`);
+    } else if (notif.type === "REVIEW_REMINDER") {
+      setCurrentListingId(notif.listingId);
+      setCurrentSellerId(notif.sellerId);
+      openReviewModal();
     }
   };
 
@@ -147,6 +157,15 @@ const Notifications = () => {
           )}
         </div>
       )}
+      <CreateReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={closeReviewModal}
+        successMessage={successMessage}
+        errorMessage={errorMessage}
+        onSubmit={(review) =>
+          handleReviewSubmit(currentListingId, currentSellerId, review)
+        }
+      />
     </div>
   );
 };
