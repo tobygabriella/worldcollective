@@ -434,6 +434,8 @@ app.get("/users/:username", async (req, res) => {
         firstname: true,
         lastname: true,
         listings: true,
+        reviewCount: true,
+        averageRating: true,
       },
     });
 
@@ -844,7 +846,7 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
       userId: sellerId,
       isRead: false,
       type: NotificationType.PURCHASE,
-      listingId: listingId,
+      listingId: parseInt(listingId),
       listingImage: listingImage,
     };
 
@@ -866,7 +868,7 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
           userId: user.id,
           isRead: false,
           type: NotificationType.LIKE_PURCHASE,
-          listingId: listingId,
+          listingId: parseInt(listingId),
           listingImage: listingImage,
         };
 
@@ -884,6 +886,103 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
       .json({ error: "Something went wrong while completing the purchase" });
   }
 });
+
+app.post("/listings/:id/reviews", verifyToken, async (req, res) => {
+  const { content, rating, sellerId } = req.body;
+  const { id: listingId } = req.params;
+  const reviewerId = req.user.id;
+
+  if (rating < 1 || rating > 5) {
+    return res.status(400).json({ error: "Rating must be between 1 and 5" });
+  }
+
+  try {
+    // Check if the user has purchased the item
+    const transaction = await prisma.transaction.findFirst({
+      where: {
+        listingId: parseInt(listingId),
+        buyerId: reviewerId,
+      },
+    });
+
+    if (!transaction) {
+      return res
+        .status(403)
+        .json({ error: "You must purchase the item to leave a review" });
+    }
+
+    // if the user has already reviewed this listing
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        reviewerId,
+        listingId: parseInt(listingId),
+      },
+    });
+
+    if (existingReview) {
+      return res
+        .status(400)
+        .json({ error: "You have already reviewed this listing" });
+    }
+
+    const review = await prisma.review.create({
+      data: {
+        content,
+        rating,
+        reviewerId,
+        sellerId: parseInt(sellerId),
+        listingId: parseInt(listingId),
+      },
+    });
+
+    // Update seller's average rating and review count
+    const reviews = await prisma.review.findMany({
+      where: { sellerId: parseInt(sellerId) },
+    });
+
+    const reviewCount = reviews.length;
+    const averageRating =
+      reviews.reduce((acc, review) => acc + review.rating, 0) / reviewCount;
+
+    await prisma.user.update({
+      where: { id: parseInt(sellerId) },
+      data: {
+        reviewCount,
+        averageRating,
+      },
+    });
+
+    res.status(201).json(review);
+  } catch (error) {
+    console.error("Error creating review:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while creating the review" });
+  }
+});
+
+app.get("/users/:id/reviews", async (req, res) => {
+  const { id: sellerId } = req.params;
+
+  try {
+    const reviews = await prisma.review.findMany({
+      where: { sellerId: parseInt(sellerId) },
+      include: {
+        reviewer: {
+          select: { username: true },
+        },
+      },
+    });
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Error fetching reviews:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching the reviews" });
+  }
+});
+
 
 app.post("/register", async (req, res) => {
   const { username, password, firstname, lastname } = req.body;
