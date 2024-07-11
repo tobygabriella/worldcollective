@@ -7,6 +7,7 @@ import { fetchListingsWithStatusAndLiked } from "../utils/likeStatusUtil";
 import useLoading from "../CustomHooks/useLoading.jsx";
 import Loading from "../Loading/Loading.jsx";
 import "./ProfileContent.css";
+import ViewReviewModal from "../Review/ViewReviewModal.jsx";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -20,6 +21,7 @@ const ProfileContent = ({
   followingCount,
 }) => {
   const [listings, setListings] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { isLoading, startLoading, stopLoading } = useLoading();
   const initials = getInitials(user.firstname, user.lastname);
 
@@ -40,6 +42,25 @@ const ProfileContent = ({
     fetchListings();
   }, [user.listings]);
 
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const renderStars = (averageRating) => {
+    return [...Array(5)].map((_, index) => (
+      <span
+        key={index}
+        className={`star ${index < Math.round(averageRating) ? "filled" : ""}`}
+      >
+        &#9733;
+      </span>
+    ));
+  };
+
   if (isLoading) {
     return <Loading />;
   }
@@ -54,6 +75,10 @@ const ProfileContent = ({
         <div className="userInfo">
           <h2>{`${user.firstname} ${user.lastname}` || "Name of User"}</h2>
           <h4>@{user.username}</h4>
+          <div className="rating" onClick={openModal}>
+            {renderStars(user.averageRating)}
+            <span>({user.reviewCount})</span>
+          </div>
           <p>{followersCount} Followers</p>
           <p>{followingCount} Following</p>
           {onFollow &&
@@ -78,6 +103,11 @@ const ProfileContent = ({
           {(listing) => <ListingItem key={listing.id} {...listing} />}
         </ListingsContainer>
       </div>
+      <ViewReviewModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        userId={user.id}
+      />
     </div>
   );
 };

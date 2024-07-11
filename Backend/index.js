@@ -971,6 +971,9 @@ app.get("/users/:id/reviews", async (req, res) => {
         reviewer: {
           select: { username: true },
         },
+        listing: {
+          select: { imageUrls: true },
+        },
       },
     });
 

@@ -1,5 +1,3 @@
-/* UserProfile.css */
-
 .profileContainer {
   width: 100%;
   margin: 0 auto;
@@ -71,7 +69,7 @@
 }
 
 .button {
-  background-color:red;
+  background-color: red;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -81,4 +79,19 @@
 
 .button:hover {
   background-color: black;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.rating .star {
+  color: black;
+  font-size: 20px;
+}
+
+.rating .star.filled {
+  color: #ffba00;
 }
