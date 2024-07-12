@@ -24,13 +24,78 @@ const sendNotification = async (notificationData, io) => {
 
   const isImportant = interactionCount >= threshold;
 
-  const notification = {
-    ...notificationData,
-    isImportant,
-  };
-  const savedNotification = await prisma.notification.create({
-    data: notification,
+  // Check for an existing similar notification
+  const existingNotification = await prisma.notification.findFirst({
+    where: {
+      type: notificationData.type,
+      userId: notificationData.userId,
+      listingId: notificationData.listingId,
+      usernameTarget: notificationData.usernameTarget,
+    },
+    orderBy: { createdAt: "desc" },
   });
+
+  let savedNotification;
+  if (existingNotification) {
+    if (notificationData.type === "LIKE") {
+      // Extract existing users who liked
+      let usersWhoLiked = existingNotification.usernameTarget
+        ? existingNotification.usernameTarget.split(", ")
+        : [];
+
+      // Add the new user who liked
+      if (!usersWhoLiked.includes(notificationData.usernameTarget)) {
+        usersWhoLiked.push(notificationData.usernameTarget);
+      }
+
+      // Fetch the listing details to get the listing name
+      const listing = await prisma.listing.findUnique({
+        where: { id: notificationData.listingId },
+      });
+
+      // Format the new content for LIKE notifications
+      const uniqueUsersWhoLiked = [...new Set(usersWhoLiked)];
+      const othersCount = uniqueUsersWhoLiked.length - 3;
+      const content = `@${uniqueUsersWhoLiked.slice(0, 3).join(", ")}${
+        othersCount > 0 ? ` and ${othersCount} others` : ""
+      } liked your listing "${listing.title}".`;
+
+      // Update the existing notification
+      savedNotification = await prisma.notification.update({
+        where: { id: existingNotification.id },
+        data: {
+          createdAt: new Date(), // Update the timestamp
+          isImportant,
+          content, // Update the content
+          usernameTarget: uniqueUsersWhoLiked.join(", "), // Update the username list
+        },
+      });
+
+      // Emit an event to remove the old notification
+      if (userSockets.length > 0) {
+        userSockets[0].emit("removeNotification", existingNotification.id);
+      }
+    } else if (notificationData.type === "FOLLOW") {
+      // For FOLLOW notifications, update the existing notification with the new timestamp
+      savedNotification = await prisma.notification.update({
+        where: { id: existingNotification.id },
+        data: {
+          createdAt: new Date(), // Update the timestamp
+          isImportant,
+          content: `@${notificationData.usernameTarget} followed you.`, // Update the content
+        },
+      });
+    }
+  } else {
+    const notification = {
+      ...notificationData,
+      isImportant,
+    };
+
+    savedNotification = await prisma.notification.create({
+      data: notification,
+    });
+  }
 
   if (userSockets.length > 0) {
     userSockets[0].emit("notification", savedNotification);
