@@ -33,10 +33,17 @@ router.post("/notifications", verifyToken, async (req, res) => {
 
 router.get("/notifications", verifyToken, async (req, res) => {
   const userId = req.user.id;
+  const { type } = req.query; 
 
   try {
+    const whereClause = { userId: parseInt(userId) };
+
+    if (type) {
+      whereClause.type = type;
+    }
+
     const notifications = await prisma.notification.findMany({
-      where: { userId: parseInt(userId) },
+      where: whereClause,
       orderBy: { createdAt: "desc" },
     });
 
