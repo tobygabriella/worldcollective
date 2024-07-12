@@ -4,41 +4,15 @@ import "./ListingItem.css";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
-const ListingItem = ({ id, title, price, imageUrls }) => {
-  const [liked, setLiked] = useState(false);
-  const [status, setStatus] = useState("");
-
-  useEffect(() => {
-    const fetchListingStatus = async () => {
-      try {
-        const response = await fetch(`${API_KEY}/listings/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setStatus(data.status);
-        }
-      } catch (error) {
-        console.error("Error fetching listing status:", error);
-      }
-    };
-
-    const fetchLikedStatus = async () => {
-      try {
-        const response = await fetch(`${API_KEY}/listings/${id}/like-status`, {
-          method: "GET",
-          credentials: "include",
-        });
-        if (response.ok) {
-          const { isLiked } = await response.json();
-          setLiked(isLiked);
-        }
-      } catch (error) {
-        console.error("Error fetching liked status:", error);
-      }
-    };
-
-    fetchListingStatus();
-    fetchLikedStatus();
-  }, [id]);
+const ListingItem = ({
+  id,
+  title,
+  price,
+  imageUrls,
+  status,
+  liked: initialLiked,
+}) => {
+  const [liked, setLiked] = useState(initialLiked);
 
   const toggleLike = async (e) => {
     e.preventDefault();

@@ -1,40 +1,21 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React from "react";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { useAuth } from "../Contexts/AuthContext";
 import AppHeader from "../Headers/AppHeader";
-import useLoading from "../CustomHooks/useLoading.jsx";
-import Loading from "../Loading/Loading.jsx";
 import "./ListingDetails.css";
 
-const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
-
 const ListingDetails = () => {
-  const { id } = useParams();
-  const [listing, setListing] = useState(null);
+  const { listing } = useOutletContext();
   const { user } = useAuth();
-  const { isLoading, startLoading, stopLoading } = useLoading();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchListing = async () => {
-      startLoading();
-      try {
-        const response = await fetch(`${API_KEY}/listings/${id}`);
-        const data = await response.json();
-        setListing(data);
-      } catch (error) {
-        console.error("Error fetching listing:", error);
-      } finally {
-        stopLoading();
-      }
-    };
-
-    fetchListing();
-  }, [id]);
+  if (!listing) {
+    return;
+  }
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`${API_KEY}/listings/${id}`, {
+      const response = await fetch(`${API_KEY}/listings/${listing.id}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
@@ -53,72 +34,64 @@ const ListingDetails = () => {
   };
 
   const handleBuyNow = () => {
-    navigate(`/buy/${id}`);
+    navigate(`buy`);
   };
-
-  if (isLoading) {
-    return <Loading />;
-  }
 
   return (
     <div className="listingDetailsContainer">
       <AppHeader />
-      {listing ? (
-        <div className="listingDetails">
-          <div className="listingImages">
-            {listing.imageUrls.map((url, index) => (
-              <div className="imageWrapper" key={index}>
-                <img
-                  key={index}
-                  src={url}
-                  alt={listing.title}
-                  className="listingImage"
-                />
-                {listing.status === "sold" && (
-                  <div className="soldOverlay">SOLD</div>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="listingInfo">
-            <h2>
-              <strong>${listing.price}</strong>
-            </h2>
-            <h2>{listing.title}</h2>
-            <p>{listing.description}</p>
-            <p>
-              <strong>Category:</strong> {listing.category}
-            </p>
-            <p>
-              <strong>Condition:</strong> {listing.condition}
-            </p>
-            {user?.id === listing.sellerId ? (
-              <div className="listingActions">
-                <button>Edit Listing</button>
-                <button onClick={handleDelete}>Delete Listing</button>
-              </div>
-            ) : (
-              listing.status !== "sold" && (
-                <button className="buyNowButton" onClick={handleBuyNow}>
-                  Buy Now
-                </button>
-              )
-            )}
-            <div className="sellerInfo">
+      <div className="listingDetails">
+        <div className="listingImages">
+          {listing.imageUrls.map((url, index) => (
+            <div className="imageWrapper" key={index}>
               <img
-                src="default-profile.png"
-                alt={user?.username}
-                className="sellerProfilePicture"
+                key={index}
+                src={url}
+                alt={listing.title}
+                className="listingImage"
               />
-              <div>
-                <p>{user?.username}</p>
-              </div>
+              {listing.status === "sold" && (
+                <div className="soldOverlay">SOLD</div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="listingInfo">
+          <h2>
+            <strong>${listing.price}</strong>
+          </h2>
+          <h2>{listing.title}</h2>
+          <p>{listing.description}</p>
+          <p>
+            <strong>Category:</strong> {listing.category}
+          </p>
+          <p>
+            <strong>Condition:</strong> {listing.condition}
+          </p>
+          {user?.id === listing.sellerId ? (
+            <div className="listingActions">
+              <button>Edit Listing</button>
+              <button onClick={handleDelete}>Delete Listing</button>
+            </div>
+          ) : (
+            listing.status !== "sold" && (
+              <button className="buyNowButton" onClick={handleBuyNow}>
+                Buy Now
+              </button>
+            )
+          )}
+          <div className="sellerInfo">
+            <img
+              src="default-profile.png"
+              alt={user?.username}
+              className="sellerProfilePicture"
+            />
+            <div>
+              <p>{user?.username}</p>
             </div>
           </div>
         </div>
-      ) : (
-        <p>Loading...</p>
-      )}
+      </div>
     </div>
   );
 };

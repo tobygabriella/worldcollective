@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import AppHeader from "../Headers/AppHeader";
 import Loading from "../Loading/Loading.jsx";
@@ -9,35 +9,13 @@ import "./PaymentPage.css";
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const PaymentPage = () => {
-  const { id } = useParams();
+  const { listing } = useOutletContext();
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
   const [clientSecret, setClientSecret] = useState("");
-  const [listing, setListing] = useState(null);
- const { isLoading, error, startLoading, stopLoading} =
-   useLoading();
+  const { isLoading } = useLoading();
   const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    const fetchListing = async () => {
-      startLoading();
-      try {
-        const response = await fetch(`${API_KEY}/listings/${id}`);
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const data = await response.json();
-        setListing(data);
-      } catch (error) {
-        console.error("Error fetching listing:", error);
-      } finally {
-       stopLoading();
-      }
-    };
-
-    fetchListing();
-  }, [id]);
 
   useEffect(() => {
     if (listing) {
@@ -96,10 +74,10 @@ const PaymentPage = () => {
         alert("An unexpected error occurred.");
       }
     } else {
-      if (paymentIntent.status === 'succeeded') {
+      if (paymentIntent.status === "succeeded") {
         try {
           const response = await fetch(
-            `${API_KEY}/listings/${id}/complete-purchase`,
+            `${API_KEY}/listings/${listing.id}/complete-purchase`,
             {
               method: "POST",
               credentials: "include",
@@ -123,24 +101,21 @@ const PaymentPage = () => {
             error
           );
         }
-      }
-      else {
+      } else {
         alert("Payment was not successful. Please try another payment method.");
       }
     }
   };
 
-   if (isLoading) {
-     return <Loading />;
-   }
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <div className="paymentPageContainer">
       <AppHeader />
       <div className="paymentContent">
-        {isLoading ? (
-          <p>Loading...</p>
-        ) : listing ? (
+        {listing ? (
           <>
             <h2>Complete your purchase for {listing.title}</h2>
             <form onSubmit={handleSubmit}>
