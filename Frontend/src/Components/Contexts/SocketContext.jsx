@@ -66,6 +66,12 @@ const fetchNotifications = async (type = "") => {
       }
     });
 
+    newSocket.on("removeNotification", (notificationId) => {
+      setNotifications((prev) =>
+        prev.filter((notif) => notif.id !== notificationId)
+      );
+    });
+
     setSocket(newSocket);
 
     return () => {

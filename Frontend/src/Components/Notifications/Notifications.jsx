@@ -71,7 +71,7 @@ const Notifications = () => {
 
   const renderNotifications = (notifications) => {
     return (
-      <ul>
+      <ul className="notificationsList">
         {notifications.map((notif, index) => {
           const isListingNotif =
             notif.type === "LIKE" ||
