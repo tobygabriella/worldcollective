@@ -11,7 +11,7 @@ import useReview from "../CustomHooks/useReview.jsx";
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const Notifications = () => {
-  const { notifications, markAsRead } = useSocket();
+  const { notifications, markAsRead, fetchNotifications } = useSocket();
   const { startLoading, isLoading, stopLoading } = useLoading();
   const navigate = useNavigate();
   const [currentSellerId, setCurrentSellerId] = useState(null);
@@ -24,13 +24,16 @@ const Notifications = () => {
     successMessage,
     errorMessage,
   } = useReview();
+  const [filterType, setFilterType] = useState("");
 
   useEffect(() => {
     startLoading();
-    if (notifications.length > 0) {
-      stopLoading();
-    }
-  }, [notifications]);
+    fetchNotifications(filterType).then(() => stopLoading());
+  }, [filterType]);
+
+  const handleTypeChange = (type) => {
+    setFilterType(type);
+  };
 
   if (isLoading) {
     return <Loading />;
@@ -113,6 +116,18 @@ const Notifications = () => {
     <div className="notificationsPage">
       <AppHeader />
       <h2>Notifications</h2>
+      <div className="filterButtons">
+        <button onClick={() => handleTypeChange("")}>All Notifications</button>
+        <button onClick={() => handleTypeChange("FOLLOW")}>Follow</button>
+        <button onClick={() => handleTypeChange("LIKE")}>Like</button>
+        <button onClick={() => handleTypeChange("PURCHASE")}>Purchase</button>
+        <button onClick={() => handleTypeChange("LIKE_PURCHASE")}>
+          Like Purchase
+        </button>
+        <button onClick={() => handleTypeChange("REVIEW_REMINDER")}>
+          Review Reminder
+        </button>
+      </div>
       {notifications.length === 0 ? (
         <p>No notifications</p>
       ) : (
