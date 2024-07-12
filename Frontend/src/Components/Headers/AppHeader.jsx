@@ -1,14 +1,19 @@
-import React,{ useState } from 'react';
+import React,{ useState} from 'react';
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from '../Contexts/AuthContext';
 import './AppHeader.css';
 import { getInitials } from "../utils/initialsUtils";
+import { useSocket } from "../Contexts/SocketContext";
+
+const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const AppHeader = () => {
   const { isAuthenticated, user, logout } = useAuth();
+   const { unreadCount } = useSocket();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+
 
   const handleLogout = () => {
     logout();
@@ -20,11 +25,13 @@ const AppHeader = () => {
      }
    };
 
-  const showIcons = location.pathname === '/userProfile';
+  const handleNotificationsClick = async () => {
+    navigate("/notifications");
+
+  };
+
   const showWelcome = location.pathname === '/';
-
   const initials = getInitials(user?.firstname, user?.lastname);
-
 
   return (
     <header className="header">
@@ -55,14 +62,16 @@ const AppHeader = () => {
                 <h3>Welcome {user.username}</h3>
               </div>
             )}
-            {showIcons && (
               <div className="icons">
                 <div
                   className="iconWrapper"
                   data-tooltip="Notification Center"
-                  onClick={() => navigate("/notifications")}
+                  onClick={handleNotificationsClick}
                 >
                   <i className="fas fa-bell"></i>
+                  {unreadCount > 0 && (
+                    <span className="notificationBadge">{unreadCount}</span>
+                  )}
                 </div>
                 <Link
                   to="/wishlist"
@@ -79,7 +88,7 @@ const AppHeader = () => {
                   <i className="fas fa-plus createListing"></i>
                 </Link>
               </div>
-            )}
+
             <Link to="/userProfile" className="circleLink">
               <div className="circle">
                 <span className="circleInitials">{initials}</span>

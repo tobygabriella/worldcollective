@@ -1,4 +1,3 @@
-// src/contexts/SocketContext.jsx
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
@@ -13,20 +12,67 @@ export const useSocket = () => {
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const newSocket = io(`${API_KEY}`);
     setSocket(newSocket);
 
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch(`${API_KEY}/notifications`, {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setNotifications(data);
+          setUnreadCount(data.filter((notif) => !notif.isRead).length);
+        } else {
+          throw new Error("Failed to fetch notifications");
+        }
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      }
+    };
+
+    fetchNotifications();
+
     newSocket.on("notification", (notification) => {
-      setNotifications((prev) => [notification, ...prev]);
+      if (notification.userId === parseInt(localStorage.getItem("userId"))) {
+        setNotifications((prev) => [notification, ...prev]);
+        setUnreadCount((prev) => prev + 1);
+      }
     });
 
     return () => newSocket.close();
   }, []);
 
+  const markAsRead = async () => {
+    try {
+      await fetch(`${API_KEY}/notifications/mark-as-read`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      setUnreadCount(0);
+      setNotifications((prev) =>
+        prev.map((notif) => ({ ...notif, isRead: true }))
+      );
+    } catch (error) {
+      console.error("Error marking notifications as read:", error);
+    }
+  };
+
   return (
-    <SocketContext.Provider value={{ socket, notifications, setNotifications }}>
+    <SocketContext.Provider
+      value={{ socket, notifications, unreadCount, markAsRead }}
+    >
       {children}
     </SocketContext.Provider>
   );

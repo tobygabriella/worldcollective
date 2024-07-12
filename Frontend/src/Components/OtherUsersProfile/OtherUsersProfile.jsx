@@ -41,7 +41,7 @@ const {
         const data = await response.json();
         setUser(data);
       } catch (err) {
-        setError(err.message);
+        setErrorState(err.message);
       } finally {
         stopLoading();
       }

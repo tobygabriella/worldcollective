@@ -15,6 +15,8 @@ const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const bodyParser = require("body-parser");
 const { buildFilters } = require("./Utils/buildFilters");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const { formatDistanceToNow } = require("date-fns");
+const NotificationType = require("./Enums/NotificationType");
 
 const saltRounds = 14;
 const secretKey = process.env.JWT_SECRET;
@@ -37,16 +39,12 @@ app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
-    methods: ["GET", "POST","DELETE"],
+    methods: ["GET", "POST", "DELETE"],
   })
 );
 
 io.on("connection", (socket) => {
-  console.log("a user connected");
-
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
-  });
+  socket.on("disconnect", () => {});
 });
 
 const verifyToken = (req, res, next) => {
@@ -402,18 +400,21 @@ app.post("/users/:id/follow", verifyToken, async (req, res) => {
 
     // Create a notification for the user being followed
     const notificationContent = `@${follower.username} just followed you.`;
-    const notification = await prisma.notification.create({
+    await prisma.notification.create({
       data: {
         content: notificationContent,
         userId: parseInt(followingId),
         isRead: false,
+        type: NotificationType.FOLLOW,
+        usernameTarget: follower.username,
       },
     });
 
     io.emit("notification", {
-      type: "follow",
+      type: NotificationType.FOLLOW,
       userId: parseInt(followingId),
       message: notificationContent,
+      usernameTarget: follower.username,
     });
 
     res.status(201).json(follow);
@@ -494,6 +495,9 @@ app.post("/notifications", verifyToken, async (req, res) => {
         content,
         userId: parseInt(userId),
         isRead: false,
+        type,
+        userIdTarget: userIdTarget ? parseInt(userIdTarget) : null,
+        listingId: listingId ? parseInt(listingId) : null,
       },
     });
     res.status(201).json(notification);
@@ -514,12 +518,55 @@ app.get("/notifications", verifyToken, async (req, res) => {
       where: { userId: parseInt(userId) },
       orderBy: { createdAt: "desc" },
     });
-    res.status(200).json(notifications);
+
+    const formattedNotifications = notifications.map((notification) => ({
+      ...notification,
+      timeAgo: formatDistanceToNow(new Date(notification.createdAt), {
+        addSuffix: true,
+      }),
+    }));
+
+    res.status(200).json(formattedNotifications);
   } catch (error) {
     console.error("Error fetching notifications:", error);
     res
       .status(500)
       .json({ error: "Something went wrong while fetching the notifications" });
+  }
+});
+
+app.post("/notifications/mark-as-read", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    await prisma.notification.updateMany({
+      where: { userId: parseInt(userId), isRead: false },
+      data: { isRead: true },
+    });
+
+    res.status(200).json({ message: "Notifications marked as read" });
+  } catch (error) {
+    console.error("Error marking notifications as read:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while updating notifications" });
+  }
+});
+
+app.get("/notifications/unread-count", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const count = await prisma.notification.count({
+      where: { userId: parseInt(userId), isRead: false },
+    });
+
+    res.status(200).json({ count });
+  } catch (error) {
+    console.error("Error fetching unread notifications count:", error);
+    res.status(500).json({
+      error: "Something went wrong while fetching notifications count",
+    });
   }
 });
 
@@ -558,14 +605,19 @@ app.post("/listings/:id/like", verifyToken, async (req, res) => {
         content: notificationContent,
         userId: listing.sellerId,
         isRead: false,
+        type: NotificationType.LIKE,
+        listingId: listing.id,
+        listingImage: listing.imageUrls[0],
       },
     });
 
     io.emit("notification", {
-      type: "like",
+      type: NotificationType.LIKE,
       itemId: itemId,
       userId: listing.sellerId,
       message: notificationContent,
+      listingId: listing.id,
+      listingImage: listing.imageUrls[0],
     });
 
     res.status(201).json(like);
@@ -692,22 +744,28 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
       },
     });
 
+    const listingImage = updatedListing.imageUrls[0];
     //notification for the seller
     const sellerId = updatedListing.sellerId;
     const notificationContent = `Your item "${updatedListing.title}" has been purchased.`;
-    const notification = await prisma.notification.create({
+    await prisma.notification.create({
       data: {
         content: notificationContent,
         userId: sellerId,
         isRead: false,
+        type: NotificationType.PURCHASE,
+        listingId: listingId,
+        listingImage: listingImage,
       },
     });
 
     io.emit("notification", {
-      type: "purchase",
+      type: NotificationType.PURCHASE,
       itemId: listingId,
       userId: sellerId,
       message: notificationContent,
+      listingId: listingId,
+      listingImage: listingImage,
     });
 
     // Fetch users who have liked this item
@@ -726,14 +784,19 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
             content: likeNotificationContent,
             userId: user.id,
             isRead: false,
+            type: NotificationType.LIKE_PURCHASE,
+            listingId: listingId,
+            listingImage: listingImage,
           },
         });
 
         io.emit("notification", {
-          type: "like-purchase",
+          type: NotificationType.LIKE_PURCHASE,
           itemId: listingId,
           userId: user.id,
           message: likeNotificationContent,
+          listingId: listingId,
+          listingImage: listingImage,
         });
       }
     }
@@ -825,6 +888,4 @@ app.get("/protected", async (req, res) => {
   }
 });
 
-server.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+server.listen(port, () => {});
