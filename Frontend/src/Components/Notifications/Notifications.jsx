@@ -50,19 +50,56 @@ const Notifications = () => {
       console.error("Error interacting with notification:", error);
     }
 
-    if (notif.type === "FOLLOW") {
-      navigate(`/users/${notif.usernameTarget}`);
-    } else if (
+    const isListingNotif =
       notif.type === "LIKE" ||
       notif.type === "PURCHASE" ||
-      notif.type === "LIKE_PURCHASE"
-    ) {
+      notif.type === "LIKE_PURCHASE";
+
+    if (notif.type === "FOLLOW") {
+      navigate(`/users/${notif.usernameTarget}`);
+    } else if (isListingNotif) {
       navigate(`/listings/${notif.listingId}`);
     } else if (notif.type === "REVIEW_REMINDER") {
       setCurrentListingId(notif.listingId);
       setCurrentSellerId(notif.sellerId);
       openReviewModal();
     }
+  };
+
+  const renderNotifications = (notifications) => {
+    return (
+      <ul>
+        {notifications.map((notif, index) => {
+          const isListingNotif =
+            notif.type === "LIKE" ||
+            notif.type === "PURCHASE" ||
+            notif.type === "LIKE_PURCHASE";
+          return (
+            <li
+              key={index}
+              className={`notificationItem ${notif.isRead ? "read" : "unread"}`}
+              onClick={() => handleNotificationClick(notif)}
+            >
+              <div className="notificationContent">
+                {!notif.isRead && <span className="unreadIndicator"></span>}
+                {isListingNotif && notif.listingImage && (
+                  <img
+                    src={notif.listingImage}
+                    alt="Listing"
+                    className="notificationImage"
+                  />
+                )}
+                {notif.type === "FOLLOW" && (
+                  <div className="profileCircle"></div>
+                )}
+                <p>{notif.content}</p>
+              </div>
+              <span className="notificationTime">{notif.timeAgo}</span>
+            </li>
+          );
+        })}
+      </ul>
+    );
   };
 
   const importantNotifications = notifications.filter(
@@ -83,76 +120,14 @@ const Notifications = () => {
           {importantNotifications.length > 0 && (
             <div className="importantNotifications">
               <h3>Priority</h3>
-              <ul>
-                {importantNotifications.map((notif, index) => (
-                  <li
-                    key={index}
-                    className={`notificationItem ${
-                      notif.isRead ? "read" : "unread"
-                    }`}
-                    onClick={() => handleNotificationClick(notif)}
-                  >
-                    <div className="notificationContent">
-                      {!notif.isRead && (
-                        <span className="unreadIndicator"></span>
-                      )}
-                      {(notif.type === "LIKE" ||
-                        notif.type === "LIKE_PURCHASE" ||
-                        notif.type === "PURCHASE") &&
-                        notif.listingImage && (
-                          <img
-                            src={notif.listingImage}
-                            alt="Listing"
-                            className="notificationImage"
-                          />
-                        )}
-                      {notif.type === "FOLLOW" && (
-                        <div className="profileCircle"></div>
-                      )}
-                      <p>{notif.content}</p>
-                    </div>
-                    <span className="notificationTime">{notif.timeAgo}</span>
-                  </li>
-                ))}
-              </ul>
+              {renderNotifications(importantNotifications)}
             </div>
           )}
 
           {otherNotifications.length > 0 && (
             <div className="otherNotifications">
               <h3>More</h3>
-              <ul>
-                {otherNotifications.map((notif, index) => (
-                  <li
-                    key={index}
-                    className={`notificationItem ${
-                      notif.isRead ? "read" : "unread"
-                    }`}
-                    onClick={() => handleNotificationClick(notif)}
-                  >
-                    <div className="notificationContent">
-                      {!notif.isRead && (
-                        <span className="unreadIndicator"></span>
-                      )}
-                      {(notif.type === "LIKE" ||
-                        notif.type === "LIKE_PURCHASE" ||
-                        notif.type === "PURCHASE") &&
-                        notif.listingImage && (
-                          <img
-                            src={notif.listingImage}
-                            alt="Listing"
-                            className="notificationImage"
-                          />
-                        )}
-                      {notif.type === "FOLLOW" && (
-                        <div className="profileCircle"></div>
-                      )}
-                      <p>{notif.content}</p>
-                    </div>
-                    <span className="notificationTime">{notif.timeAgo}</span>
-                  </li>
-                ))}
-              </ul>
+              {renderNotifications(otherNotifications)}
             </div>
           )}
         </div>
