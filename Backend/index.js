@@ -16,6 +16,7 @@ const bodyParser = require("body-parser");
 const { buildFilters } = require("./Utils/buildFilters");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { formatDistanceToNow } = require("date-fns");
+const { subDays } = require("date-fns");
 const NotificationType = require("./Enums/NotificationType");
 
 const saltRounds = 14;
@@ -39,13 +40,52 @@ app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
-    methods: ["GET", "POST", "DELETE"],
+    methods: ["GET", "POST", "DELETE", "PUT"],
   })
 );
 
 io.on("connection", (socket) => {
-  socket.on("disconnect", () => {});
+  const userId = socket.handshake.query.userId;
+  // Mark user as online
+  socket.join(userId);
+  socket.on("disconnect", () => {
+    socket.leave(userId);
+  });
 });
+
+const sendNotification = async (notificationData) => {
+  const userId = notificationData.userId;
+  const isOnline = io.sockets.adapter.rooms.has(userId);
+
+  const recentTimeframe = subDays(new Date(), 5);
+  const threshold = 5;
+
+  // Check if the type should be marked as important for this specific user
+  const interactionCount = await prisma.notification.count({
+    where: {
+      type: notificationData.type,
+      userId: userId,
+      lastInteractedAt: {
+        gte: recentTimeframe,
+      },
+    },
+  });
+
+  const isImportant = interactionCount >= threshold;
+
+  const notification = {
+    ...notificationData,
+    isImportant,
+  };
+
+  if (isOnline) {
+    io.to(userId).emit("notification", notification);
+  } else {
+    // Store notification in the database
+    await prisma.notification.create({ data: notification });
+  }
+};
+
 
 const verifyToken = (req, res, next) => {
   const token = req.cookies.token;
@@ -60,6 +100,39 @@ const verifyToken = (req, res, next) => {
     res.status(401).json({ message: "Token is not valid" });
   }
 };
+
+const updateImportantNotificationTypes = async () => {
+  const threshold = 5;
+  const recentTimeframe = subDays(new Date(), 5);
+
+  // Get all users
+  const users = await prisma.user.findMany();
+
+  for (const user of users) {
+    const userId = user.id;
+
+    // Find interaction counts by type for this user
+    const interactionCountsByType = await prisma.notification.groupBy({
+      by: ["type"],
+      _sum: {
+        interactionCount: true,
+      },
+      where: {
+        userId: userId,
+        lastInteractedAt: {
+          gte: recentTimeframe,
+        },
+      },
+    });
+
+    // Determine which types are important for this user
+    const importantTypes = interactionCountsByType
+      .filter((group) => group._sum.interactionCount >= threshold)
+      .map((group) => group.type);
+  }
+};
+
+setInterval(updateImportantNotificationTypes, 24 * 60 * 60 * 1000);
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -400,22 +473,14 @@ app.post("/users/:id/follow", verifyToken, async (req, res) => {
 
     // Create a notification for the user being followed
     const notificationContent = `@${follower.username} just followed you.`;
-    await prisma.notification.create({
-      data: {
-        content: notificationContent,
-        userId: parseInt(followingId),
-        isRead: false,
-        type: NotificationType.FOLLOW,
-        usernameTarget: follower.username,
-      },
-    });
-
-    io.emit("notification", {
-      type: NotificationType.FOLLOW,
+    const notificationData = {
+      content: notificationContent,
       userId: parseInt(followingId),
-      message: notificationContent,
+      isRead: false,
+      type: NotificationType.FOLLOW,
       usernameTarget: follower.username,
-    });
+    };
+    await sendNotification(notificationData);
 
     res.status(201).json(follow);
   } catch (error) {
@@ -570,6 +635,41 @@ app.get("/notifications/unread-count", verifyToken, async (req, res) => {
   }
 });
 
+app.put("/notifications/:id/interact", verifyToken, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const notification = await prisma.notification.update({
+      where: { id: parseInt(id) },
+      data: {
+        interactionCount: { increment: 1 },
+        lastInteractedAt: new Date(), // Update the timestamp
+      },
+    });
+
+    res.status(200).json(notification);
+  } catch (error) {
+    console.error("Error recording notification interaction:", error);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+app.get("/notifications/important", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const importantNotifications = await prisma.notification.findMany({
+      where: { userId: parseInt(userId), isImportant: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json(importantNotifications);
+  } catch (error) {
+    console.error("Error fetching important notifications:", error);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
 // Like an item
 app.post("/listings/:id/like", verifyToken, async (req, res) => {
   const { id: itemId } = req.params;
@@ -600,25 +700,15 @@ app.post("/listings/:id/like", verifyToken, async (req, res) => {
     });
 
     const notificationContent = `Your item ${listing.title} has been liked.`;
-    await prisma.notification.create({
-      data: {
-        content: notificationContent,
-        userId: listing.sellerId,
-        isRead: false,
-        type: NotificationType.LIKE,
-        listingId: listing.id,
-        listingImage: listing.imageUrls[0],
-      },
-    });
-
-    io.emit("notification", {
-      type: NotificationType.LIKE,
-      itemId: itemId,
+    const notificationData = {
+      content: notificationContent,
       userId: listing.sellerId,
-      message: notificationContent,
+      isRead: false,
+      type: NotificationType.LIKE,
       listingId: listing.id,
       listingImage: listing.imageUrls[0],
-    });
+    };
+    await sendNotification(notificationData);
 
     res.status(201).json(like);
   } catch (error) {
@@ -748,25 +838,17 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
     //notification for the seller
     const sellerId = updatedListing.sellerId;
     const notificationContent = `Your item "${updatedListing.title}" has been purchased.`;
-    await prisma.notification.create({
-      data: {
-        content: notificationContent,
-        userId: sellerId,
-        isRead: false,
-        type: NotificationType.PURCHASE,
-        listingId: listingId,
-        listingImage: listingImage,
-      },
-    });
 
-    io.emit("notification", {
-      type: NotificationType.PURCHASE,
-      itemId: listingId,
+    const sellerNotification = {
+      content: notificationContent,
       userId: sellerId,
-      message: notificationContent,
+      isRead: false,
+      type: NotificationType.PURCHASE,
       listingId: listingId,
       listingImage: listingImage,
-    });
+    };
+
+    await sendNotification(sellerNotification);
 
     // Fetch users who have liked this item
     const likes = await prisma.like.findMany({
@@ -779,25 +861,16 @@ app.post("/listings/:id/complete-purchase", verifyToken, async (req, res) => {
       const user = like.user;
       if (user.id !== userId) {
         const likeNotificationContent = `An item you liked "${updatedListing.title}" has been purchased.`;
-        await prisma.notification.create({
-          data: {
-            content: likeNotificationContent,
-            userId: user.id,
-            isRead: false,
-            type: NotificationType.LIKE_PURCHASE,
-            listingId: listingId,
-            listingImage: listingImage,
-          },
-        });
-
-        io.emit("notification", {
-          type: NotificationType.LIKE_PURCHASE,
-          itemId: listingId,
+        const userNotification = {
+          content: likeNotificationContent,
           userId: user.id,
-          message: likeNotificationContent,
+          isRead: false,
+          type: NotificationType.LIKE_PURCHASE,
           listingId: listingId,
           listingImage: listingImage,
-        });
+        };
+
+        await sendNotification(userNotification);
       }
     }
 

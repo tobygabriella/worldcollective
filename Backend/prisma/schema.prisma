@@ -96,4 +96,7 @@ model Notification {
   usernameTarget  String?
   listingId  Int?
   listingImage String?
+  interactionCount Int     @default(0)
+  lastInteractedAt DateTime @default(now())
+  isImportant     Boolean  @default(false)
 }
