@@ -56,7 +56,11 @@ const SearchResults = () => {
 
       try {
         const response = await fetch(
-          `${API_KEY}/search?${translatedParams.toString()}`
+          `${API_KEY}/search?${translatedParams.toString()}`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
         );
         if (!response.ok) {
           throw new Error("Failed to fetch search results");

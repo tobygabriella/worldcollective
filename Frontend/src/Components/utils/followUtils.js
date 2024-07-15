@@ -46,13 +46,21 @@ export const fetchCounts = async (
 ) => {
   try {
     const followersResponse = await fetch(
-      `${API_KEY}/users/${userId}/followers`
+      `${API_KEY}/users/${userId}/followers`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
     );
     const followersData = await followersResponse.json();
     setFollowersCount(followersData.length);
 
     const followingsResponse = await fetch(
-      `${API_KEY}/users/${userId}/followings`
+      `${API_KEY}/users/${userId}/followings`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
     );
     const followingsData = await followingsResponse.json();
     setFollowingCount(followingsData.length);
@@ -68,7 +76,11 @@ export const checkFollowingStatus = async (
 ) => {
   try {
     const response = await fetch(
-      `${API_KEY}/users/${currentUserId}/followings`
+      `${API_KEY}/users/${currentUserId}/followings`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
     );
     const data = await response.json();
     const isUserFollowing = data.some(
