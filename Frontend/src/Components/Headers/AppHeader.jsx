@@ -1,33 +1,32 @@
-import React,{ useState} from 'react';
+import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from '../Contexts/AuthContext';
-import './AppHeader.css';
+import { useAuth } from "../Contexts/AuthContext";
+import "./AppHeader.css";
 import { getInitials } from "../utils/initialsUtils";
 import { useSocket } from "../Contexts/SocketContext";
 
 const AppHeader = () => {
   const { isAuthenticated, user, logout } = useAuth();
-   const { unreadCount } = useSocket();
+  const { unreadCount } = useSocket();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-
 
   const handleLogout = () => {
     logout();
   };
 
-   const handleSearch = (event) => {
-     if (event.key === "Enter") {
-       navigate(`/search?query=${searchQuery}`);
-     }
-   };
+  const handleSearch = (event) => {
+    if (event.key === "Enter") {
+      navigate(`/search?query=${searchQuery}`);
+    }
+  };
 
   const handleNotificationsClick = async () => {
     navigate("/notifications");
   };
 
-  const showWelcome = location.pathname === '/';
+  const showWelcome = location.pathname === "/";
   const initials = getInitials(user?.firstname, user?.lastname);
 
   return (
@@ -59,32 +58,32 @@ const AppHeader = () => {
                 <h3>Welcome {user.username}</h3>
               </div>
             )}
-              <div className="icons">
-                <div
-                  className="iconWrapper"
-                  data-tooltip="Notification Center"
-                  onClick={handleNotificationsClick}
-                >
-                  <i className="fas fa-bell"></i>
-                  {unreadCount > 0 && (
-                    <span className="notificationBadge">{unreadCount}</span>
-                  )}
-                </div>
-                <Link
-                  to="/wishlist"
-                  className="iconWrapper"
-                  data-tooltip="Wishlist"
-                >
-                  <i className="fas fa-heart"></i>
-                </Link>
-                <Link
-                  to="/createListing"
-                  className="iconWrapper"
-                  data-tooltip="Add a Listing"
-                >
-                  <i className="fas fa-plus createListing"></i>
-                </Link>
+            <div className="icons">
+              <div
+                className="iconWrapper"
+                data-tooltip="Notification Center"
+                onClick={handleNotificationsClick}
+              >
+                <i className="fas fa-bell"></i>
+                {unreadCount > 0 && (
+                  <span className="notificationBadge">{unreadCount}</span>
+                )}
               </div>
+              <Link
+                to="/wishlist"
+                className="iconWrapper"
+                data-tooltip="Wishlist"
+              >
+                <i className="fas fa-heart"></i>
+              </Link>
+              <Link
+                to="/createListing"
+                className="iconWrapper"
+                data-tooltip="Add a Listing"
+              >
+                <i className="fas fa-plus createListing"></i>
+              </Link>
+            </div>
 
             <Link to="/userProfile" className="circleLink">
               <div className="circle">
