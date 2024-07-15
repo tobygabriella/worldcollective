@@ -37,10 +37,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    document.cookie = "token=; Max-Age=0; path=/; domain=localhost";
-    navigate("/");
-    setIsAuthenticated(false);
-    setUser(null);
+    try {
+      const response = await fetch(`${API_KEY}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (response.ok) {
+        setIsAuthenticated(false);
+        setUser(null);
+        navigate("/");
+      } else {
+        console.error("Logout failed");
+      }
+    } catch (error) {
+      console.error("Logout error", error);
+    }
   };
 
   return (

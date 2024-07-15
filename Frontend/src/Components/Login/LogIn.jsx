@@ -33,7 +33,8 @@ const LogIn = () => {
         login(user);
         navigate("/");
       } else {
-        setError("Invalid credentials. Please try again.");
+        const errorData = await response.json();
+        setError(errorData.message || "Invalid credentials. Please try again.");
       }
     } catch (err) {
       console.error(err);
