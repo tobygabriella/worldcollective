@@ -32,7 +32,11 @@ const FilteredListings = () => {
         });
 
         const response = await fetch(
-          `${API_KEY}/listings/${filterType}/${filterValue}?${translatedParams.toString()}`
+          `${API_KEY}/listings/${filterType}/${filterValue}?${translatedParams.toString()}`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
         );
         const data = await response.json();
         const listingsWithStatusAndLiked =
