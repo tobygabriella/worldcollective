@@ -268,11 +268,8 @@ const scheduleNotifications = async (userId, newNotification, io) => {
   }
 
   const bestHour = await performKMeansClustering(userId);
-  const now = new Date();
 
-  const testRunTime = new Date(now.getTime() + 10 * 1000);
-
-  const job = schedule.scheduleJob(testRunTime, async () => {
+  const job = schedule.scheduleJob({hour: bestHour, minute:0}, async () => {
     const notifications = pendingNotifications.get(userId) || [];
     if (notifications.length > 0) {
       if (userSockets.length > 0) {
