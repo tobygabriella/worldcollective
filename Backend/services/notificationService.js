@@ -1,7 +1,11 @@
 const { PrismaClient } = require("@prisma/client");
 const { subDays } = require("date-fns");
 const prisma = new PrismaClient();
+const schedule = require("node-schedule");
+const { sendEmail } = require("../services/emailService");
 const threshold = 5;
+const scheduledJobs = new Map();
+const pendingNotifications = new Map();
 
 const sendNotification = async (notificationData, io) => {
   const userId = notificationData.userId;
@@ -37,6 +41,10 @@ const sendNotification = async (notificationData, io) => {
 
   let savedNotification;
   if (existingNotification) {
+    //emit an event to remove old notification
+    if (userSockets.length > 0) {
+      userSockets[0].emit("removeNotification", existingNotification.id);
+    }
     if (notificationData.type === "LIKE") {
       // Extract existing users who liked
       let usersWhoLiked = existingNotification.usernameTarget
@@ -67,14 +75,11 @@ const sendNotification = async (notificationData, io) => {
           createdAt: new Date(), // Update the timestamp
           isImportant,
           content, // Update the content
-          usernameTarget: uniqueUsersWhoLiked.join(", "), // Update the username list
+          usernameTarget: uniqueUsersWhoLiked.join(", "), //update the username list
+          isPending: true,
+          isRead: false,
         },
       });
-
-      // Emit an event to remove the old notification
-      if (userSockets.length > 0) {
-        userSockets[0].emit("removeNotification", existingNotification.id);
-      }
     } else if (notificationData.type === "FOLLOW") {
       // For FOLLOW notifications, update the existing notification with the new timestamp
       savedNotification = await prisma.notification.update({
@@ -83,6 +88,8 @@ const sendNotification = async (notificationData, io) => {
           createdAt: new Date(), // Update the timestamp
           isImportant,
           content: `@${notificationData.usernameTarget} followed you.`, // Update the content
+          isPending: true,
+          isRead: false,
         },
       });
     }
@@ -90,6 +97,7 @@ const sendNotification = async (notificationData, io) => {
     const notification = {
       ...notificationData,
       isImportant,
+      isPending: true,
     };
 
     savedNotification = await prisma.notification.create({
@@ -97,8 +105,29 @@ const sendNotification = async (notificationData, io) => {
     });
   }
 
+  const userActivePeriods = await prisma.userActivePeriods.findUnique({
+    where: { userId },
+  });
+
+  if (!userActivePeriods) {
+    if (userSockets.length > 0) {
+      userSockets[0].emit("notification", savedNotification);
+    }
+    await prisma.notification.update({
+      where: { id: savedNotification.id },
+      data: { isPending: false },
+    });
+  }
+  await scheduleNotifications(userId, savedNotification, io);
+  // Emit pending notification count
+  const pendingCount = await prisma.notification.count({
+    where: {
+      userId,
+      isPending: true,
+    },
+  });
   if (userSockets.length > 0) {
-    userSockets[0].emit("notification", savedNotification);
+    userSockets[0].emit("pendingNotificationCount", pendingCount);
   }
 };
 
@@ -132,4 +161,177 @@ const updateImportantNotificationTypes = async () => {
   }
 };
 
-module.exports = { sendNotification, updateImportantNotificationTypes };
+const performKMeansClustering = async (userId, k = 3, maxIterations = 100) => {
+  try {
+    // Step 1: Fetch user activity data for the past week
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const activities = await prisma.userActivity.findMany({
+      where: {
+        userId,
+        timestamp: {
+          gte: oneWeekAgo, // Only include activities from the past week
+        },
+      },
+    });
+
+    // Step 2: Extract the hours from the activity timestamps
+    const hours = activities.map((activity) =>
+      new Date(activity.timestamp).getHours()
+    );
+    // Step 3: Initialize centroids (randomly select k unique hours)
+    let centroids = [];
+    while (centroids.length < k) {
+      const randomHour = hours[Math.floor(Math.random() * hours.length)];
+      if (!centroids.includes(randomHour)) {
+        centroids.push(randomHour);
+      }
+    }
+
+    // Helper function to calculate distance between two points (hours)
+    const calculateDistance = (point, centroid) => Math.abs(point - centroid);
+
+    // Helper function to update centroids
+    const updateCentroids = (clusters) => {
+      return clusters.map((cluster) => {
+        if (cluster.length === 0) return 0; // Avoid division by zero
+        const sum = cluster.reduce((acc, point) => acc + point, 0);
+        return Math.round(sum / cluster.length);
+      });
+    };
+
+    let clusters = [];
+    let iterations = 0;
+
+    while (iterations < maxIterations) {
+      // Step 4: Assign each point to the nearest centroid
+      clusters = Array.from({ length: k }, () => []);
+      hours.forEach((hour) => {
+        let minDistance = Infinity;
+        let closestCentroid = 0;
+        centroids.forEach((centroid, idx) => {
+          const distance = calculateDistance(hour, centroid);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestCentroid = idx;
+          }
+        });
+        clusters[closestCentroid].push(hour);
+      });
+
+      // Step 5: Update centroids based on the mean of assigned points
+      const newCentroids = updateCentroids(clusters);
+
+      // Check for convergence if centroids do not change
+      if (JSON.stringify(newCentroids) === JSON.stringify(centroids)) break;
+
+      centroids = newCentroids;
+      iterations++;
+    }
+
+    // Step 6: Determine the best hour from the largest cluster
+    const bestCluster = clusters.reduce(
+      (maxCluster, cluster) =>
+        cluster.length > maxCluster.length ? cluster : maxCluster,
+      clusters[0]
+    );
+    const bestHour = Math.round(
+      bestCluster.reduce((acc, hour) => acc + hour, 0) / bestCluster.length
+    );
+    await prisma.userActivePeriods.upsert({
+      where: { userId: userId },
+      update: { mostActivePeriods: { set: [bestHour] } },
+      create: {
+        userId: userId,
+        mostActivePeriods: { set: [bestHour] },
+      },
+    });
+    return bestHour;
+  } catch (error) {
+    console.error("Error in K-means clustering:", error);
+  }
+};
+
+const scheduleNotifications = async (userId, newNotification, io) => {
+  const userSockets = Array.from(io.sockets.sockets.values()).filter(
+    (socket) => socket.userId == userId
+  );
+  // Add the new notification to the pending list
+  if (!pendingNotifications.has(userId)) {
+    pendingNotifications.set(userId, []);
+  }
+  pendingNotifications.get(userId).push(newNotification);
+
+  // Check if the job is already scheduled
+  if (scheduledJobs.has(userId)) {
+    return;
+  }
+
+  const bestHour = await performKMeansClustering(userId);
+  const now = new Date();
+
+  const testRunTime = new Date(now.getTime() + 10 * 1000);
+
+  const job = schedule.scheduleJob(testRunTime, async () => {
+    const notifications = pendingNotifications.get(userId) || [];
+    if (notifications.length > 0) {
+      if (userSockets.length > 0) {
+        notifications.forEach((notif) => {
+          userSockets[0].emit("notification", notif);
+        });
+      } else if (userSockets.length === 0) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { email: true },
+        });
+
+        if (user && user.email) {
+          await sendEmail(
+            user.email,
+            "Missed Notifications- World Collective",
+            `You have ${notifications.length} new notifications. Please log in to view them.`
+          );
+        }
+      }
+
+      await prisma.notification.updateMany({
+        where: { userId, isPending: true },
+        data: { isPending: false },
+      });
+
+      const pendingCount = await prisma.notification.count({
+        where: {
+          userId,
+          isPending: true,
+        },
+      });
+      if (userSockets.length > 0) {
+        userSockets[0].emit("pendingNotificationCount", pendingCount);
+      }
+      // Clear the pending notifications
+      pendingNotifications.set(userId, []);
+    }
+    // Remove the job from the map after it has run
+    scheduledJobs.delete(userId);
+  });
+
+  // Store the scheduled job
+  scheduledJobs.set(userId, job);
+};
+
+// Function to clear scheduled job
+const clearScheduledJob = (userId) => {
+  if (scheduledJobs.has(userId)) {
+    const job = scheduledJobs.get(userId);
+    job.cancel();
+    scheduledJobs.delete(userId);
+  }
+};
+
+module.exports = {
+  sendNotification,
+  updateImportantNotificationTypes,
+  performKMeansClustering,
+  scheduleNotifications,
+  clearScheduledJob,
+};
