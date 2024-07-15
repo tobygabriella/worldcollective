@@ -18,9 +18,10 @@ model User {
   id             Int       @id @default(autoincrement())
   firstname      String
   lastname       String
+  email          String    @unique
   username       String    @unique
   password       String
-  bio            String?
+  isVerified     Boolean   @default(false)
   createdAt      DateTime  @default(now())
   listings       Listing[]
   likes          Like[]
@@ -32,7 +33,18 @@ model User {
   reviewsReceived Review[]   @relation("Seller")
   averageRating      Float?     @default(0.0)
   reviewCount        Int        @default(0)
+  activities       UserActivity[]
+  activePeriods    UserActivePeriods?
+  verificationTokens EmailVerificationToken[]
   }
+
+model EmailVerificationToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
 
   model Review {
   id          Int      @id @default(autoincrement())
@@ -42,9 +54,9 @@ model User {
   sellerId    Int
   listingId   Int
   createdAt   DateTime @default(now())
-  reviewer    User     @relation(name: "Reviewer", fields: [reviewerId], references: [id])
-  seller      User     @relation(name: "Seller", fields: [sellerId], references: [id])
-  listing     Listing  @relation(fields: [listingId], references: [id])
+  reviewer    User     @relation(name: "Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  seller      User     @relation(name: "Seller", fields: [sellerId], references: [id], onDelete: Cascade)
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
 }
 
@@ -53,8 +65,8 @@ model User {
   followerId Int
   followingId Int
   createdAt  DateTime @default(now())
-  follower   User     @relation("follower", fields: [followerId], references: [id])
-  following  User     @relation("following", fields: [followingId], references: [id])
+  follower   User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following  User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
 }
 
  model Listing {
@@ -68,7 +80,7 @@ model User {
   brand       String
   imageUrls   String[]
   sellerId    Int
-  seller      User      @relation(fields: [sellerId], references: [id])
+  seller      User      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   status      String
@@ -83,8 +95,8 @@ model User {
   buyerId         Int
   paymentIntentId String
   createdAt       DateTime  @default(now())
-  listing         Listing   @relation("ListingTransactions", fields: [listingId], references: [id])
-  buyer           User      @relation("BuyerTransactions", fields: [buyerId], references: [id])
+  listing         Listing   @relation("ListingTransactions", fields: [listingId], references: [id], onDelete: Cascade)
+  buyer           User      @relation("BuyerTransactions", fields: [buyerId], references: [id], onDelete: Cascade)
 }
 
 
@@ -93,8 +105,8 @@ model Like {
   userId    Int
   itemId    Int
   createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id])
-  item      Listing   @relation(fields: [itemId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item      Listing   @relation(fields: [itemId], references: [id], onDelete: Cascade)
 }
 
 enum NotificationType {
@@ -111,7 +123,7 @@ model Notification {
   userId    Int
   isRead    Boolean   @default(false)
   createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      NotificationType
   usernameTarget  String?
   sellerId         Int?
@@ -120,4 +132,19 @@ model Notification {
   interactionCount Int     @default(0)
   lastInteractedAt DateTime @default(now())
   isImportant     Boolean  @default(false)
+  isPending       Boolean  @default(true)
+}
+
+model UserActivity {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  activityType String
+  timestamp  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserActivePeriods {
+  userId       Int       @id
+  mostActivePeriods Json?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

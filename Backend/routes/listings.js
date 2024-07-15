@@ -7,9 +7,11 @@ const cloudinary = require("../config/cloudinaryConfig");
 const { buildFilters } = require("../utils/buildFilters.js");
 const { sendNotification } = require("../services/notificationService");
 const NotificationType = require("../Enums/NotificationType.js");
+const logActivity = require("../middlewares/logActivity");
 
 const prisma = new PrismaClient();
 const router = express.Router();
+router.use(verifyToken);
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
@@ -24,6 +26,7 @@ const upload = multer({ storage: storage });
 router.post(
   "/listings",
   verifyToken,
+  logActivity(),
   upload.array("images", 8),
   async (req, res) => {
     const {
@@ -63,7 +66,7 @@ router.post(
   }
 );
 
-router.get("/listings/user", verifyToken, async (req, res) => {
+router.get("/listings/user", logActivity(), verifyToken, async (req, res) => {
   const userId = req.user.id;
   try {
     const userListings = await prisma.listing.findMany({
@@ -80,7 +83,7 @@ router.get("/listings/user", verifyToken, async (req, res) => {
   }
 });
 
-router.get("/listings/:id", async (req, res) => {
+router.get("/listings/:id", logActivity(), async (req, res) => {
   const { id } = req.params;
   try {
     const listing = await prisma.listing.findUnique({
@@ -102,7 +105,7 @@ router.get("/listings/:id", async (req, res) => {
   }
 });
 
-router.delete("/listings/:id", verifyToken, async (req, res) => {
+router.delete("/listings/:id",verifyToken, async (req, res) => {
   const { id } = req.params;
   const sellerId = req.user.id;
 
@@ -146,21 +149,25 @@ router.get("/listings/category/:category", async (req, res) => {
   }
 });
 
-router.get("/listings/subcategory/:subcategory", async (req, res) => {
-  const { subcategory } = req.params;
-  const filters = buildFilters({ subcategory }, req.query);
-  try {
-    const listings = await prisma.listing.findMany({ where: { ...filters } });
-    res.status(200).json(listings);
-  } catch (error) {
-    console.error("Error fetching listings by subcategory:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while fetching the listings" });
+router.get(
+  "/listings/subcategory/:subcategory",
+  logActivity(),
+  async (req, res) => {
+    const { subcategory } = req.params;
+    const filters = buildFilters({ subcategory }, req.query);
+    try {
+      const listings = await prisma.listing.findMany({ where: { ...filters } });
+      res.status(200).json(listings);
+    } catch (error) {
+      console.error("Error fetching listings by subcategory:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while fetching the listings" });
+    }
   }
-});
+);
 
-router.get("/listings/price/:maxPrice", async (req, res) => {
+router.get("/listings/price/:maxPrice", logActivity(), async (req, res) => {
   const { maxPrice } = req.params;
   const filters = buildFilters(
     { price: { lte: parseFloat(maxPrice) } },
@@ -179,7 +186,7 @@ router.get("/listings/price/:maxPrice", async (req, res) => {
   }
 });
 
-router.get("/listings/brand/:brand", async (req, res) => {
+router.get("/listings/brand/:brand", logActivity(), async (req, res) => {
   const { brand } = req.params;
   const filters = buildFilters({ brand }, req.query);
 
@@ -196,24 +203,28 @@ router.get("/listings/brand/:brand", async (req, res) => {
   }
 });
 
-router.get("/listings/condition/:condition", async (req, res) => {
-  const { condition } = req.params;
-  const filters = buildFilters({ condition }, req.query);
+router.get(
+  "/listings/condition/:condition",
+  logActivity(),
+  async (req, res) => {
+    const { condition } = req.params;
+    const filters = buildFilters({ condition }, req.query);
 
-  try {
-    const listings = await prisma.listing.findMany({
-      where: { ...filters },
-    });
-    res.status(200).json(listings);
-  } catch (error) {
-    console.error("Error fetching listings by condition:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while fetching the listings" });
+    try {
+      const listings = await prisma.listing.findMany({
+        where: { ...filters },
+      });
+      res.status(200).json(listings);
+    } catch (error) {
+      console.error("Error fetching listings by condition:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while fetching the listings" });
+    }
   }
-});
+);
 
-router.get("/search", async (req, res) => {
+router.get("/search", logActivity(), async (req, res) => {
   const { query } = req.query;
 
   if (!query) {
@@ -273,7 +284,6 @@ router.get("/search", async (req, res) => {
       select: {
         id: true,
         username: true,
-        bio: true,
       },
     });
 
@@ -292,92 +302,101 @@ router.get("/search", async (req, res) => {
   }
 });
 
-router.post("/listings/:id/like", verifyToken, async (req, res) => {
-  const { id: itemId } = req.params;
-  const userId = req.user.id;
-  const io = req.app.locals.io;
+router.post(
+  "/listings/:id/like",
+  logActivity(),
+  verifyToken,
+  async (req, res) => {
+    const { id: itemId } = req.params;
+    const userId = req.user.id;
+    const io = req.app.locals.io;
 
-  try {
-    const existingLike = await prisma.like.findFirst({
-      where: {
-        userId: parseInt(userId),
-        itemId: parseInt(itemId),
-      },
-    });
+    try {
+      const existingLike = await prisma.like.findFirst({
+        where: {
+          userId: parseInt(userId),
+          itemId: parseInt(itemId),
+        },
+      });
 
-    if (existingLike) {
-      return res.status(400).json({ message: "Item is already liked" });
+      if (existingLike) {
+        return res.status(400).json({ message: "Item is already liked" });
+      }
+
+      const like = await prisma.like.create({
+        data: {
+          userId: parseInt(userId),
+          itemId: parseInt(itemId),
+        },
+      });
+      //finding the seller id of the listing liked
+      const listing = await prisma.listing.findUnique({
+        where: { id: parseInt(itemId) },
+        include: { seller: true },
+      });
+
+      const liker = await prisma.user.findUnique({
+        where: { id: parseInt(userId) },
+      });
+
+      const listingImage = listing.imageUrls[0];
+
+      const notificationContent = `@${liker.username} liked your item ${listing.title}.`;
+      const notificationData = {
+        content: notificationContent,
+        userId: listing.sellerId,
+        isRead: false,
+        type: NotificationType.LIKE,
+        listingId: listing.id,
+        listingImage: listingImage,
+        usernameTarget: liker.username,
+      };
+      await sendNotification(notificationData, io);
+
+      res.status(201).json(like);
+    } catch (error) {
+      console.error("Error liking item:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while liking the item" });
     }
-
-    const like = await prisma.like.create({
-      data: {
-        userId: parseInt(userId),
-        itemId: parseInt(itemId),
-      },
-    });
-    //finding the seller id of the listing liked
-    const listing = await prisma.listing.findUnique({
-      where: { id: parseInt(itemId) },
-      include: { seller: true },
-    });
-
-    const liker = await prisma.user.findUnique({
-      where: { id: parseInt(userId) },
-    });
-
-    const listingImage = listing.imageUrls[0];
-
-    const notificationContent = `@${liker.username} liked your item ${listing.title}.`;
-    const notificationData = {
-      content: notificationContent,
-      userId: listing.sellerId,
-      isRead: false,
-      type: NotificationType.LIKE,
-      listingId: listing.id,
-      listingImage: listingImage,
-      usernameTarget: liker.username,
-    };
-    await sendNotification(notificationData, io);
-
-    res.status(201).json(like);
-  } catch (error) {
-    console.error("Error liking item:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while liking the item" });
   }
-});
+);
 
-router.delete("/listings/:id/like", verifyToken, async (req, res) => {
-  const { id: itemId } = req.params;
-  const userId = req.user.id;
+router.delete(
+  "/listings/:id/like",
+  verifyToken,
+  async (req, res) => {
+    const { id: itemId } = req.params;
+    const userId = req.user.id;
 
-  try {
-    const existingLike = await prisma.like.findFirst({
-      where: {
-        userId: parseInt(userId),
-        itemId: parseInt(itemId),
-      },
-    });
+    try {
+      const existingLike = await prisma.like.findFirst({
+        where: {
+          userId: parseInt(userId),
+          itemId: parseInt(itemId),
+        },
+      });
 
-    if (!existingLike) {
-      return res.status(400).json({ message: "Item is not liked" });
+      if (!existingLike) {
+        return res.status(400).json({ message: "Item is not liked" });
+      }
+
+      await prisma.like.delete({
+        where: { id: existingLike.id },
+      });
+
+      res.status(200).json({ message: "Item unliked successfully" });
+    } catch (error) {
+      console.error("Error unliking item:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while unliking the item" });
     }
-
-    await prisma.like.delete({
-      where: { id: existingLike.id },
-    });
-
-    res.status(200).json({ message: "Item unliked successfully" });
-  } catch (error) {
-    console.error("Error unliking item:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while unliking the item" });
   }
-});
+);
 
-router.get("/wishlist", verifyToken, async (req, res) => {
+router.get("/wishlist", verifyToken, logActivity(), async (req, res) => {
   const userId = req.user.id;
 
   try {
@@ -399,49 +418,60 @@ router.get("/wishlist", verifyToken, async (req, res) => {
   }
 });
 
-router.get("/listings/:id/like-status", verifyToken, async (req, res) => {
-  const { id: itemId } = req.params;
-  const userId = req.user.id;
+router.get(
+  "/listings/:id/like-status",
+  logActivity(),
+  verifyToken,
+  async (req, res) => {
+    const { id: itemId } = req.params;
+    const userId = req.user.id;
 
-  try {
-    const existingLike = await prisma.like.findFirst({
-      where: {
-        userId: parseInt(userId),
-        itemId: parseInt(itemId),
-      },
-    });
+    try {
+      const existingLike = await prisma.like.findFirst({
+        where: {
+          userId: parseInt(userId),
+          itemId: parseInt(itemId),
+        },
+      });
 
-    res.status(200).json({ isLiked: !!existingLike });
-  } catch (error) {
-    console.error("Error fetching liked status:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while fetching liked status" });
+      res.status(200).json({ isLiked: !!existingLike });
+    } catch (error) {
+      console.error("Error fetching liked status:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while fetching liked status" });
+    }
   }
-});
+);
 
-router.post("/create-payment-intent", verifyToken, async (req, res) => {
-  const { amount } = req.body;
+router.post(
+  "/create-payment-intent",
+  logActivity(),
+  verifyToken,
+  async (req, res) => {
+    const { amount } = req.body;
 
-  try {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount * 100, // Amount in cents
-      currency: "usd",
-    });
+    try {
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount * 100, // Amount in cents
+        currency: "usd",
+      });
 
-    res.status(201).json({
-      clientSecret: paymentIntent.client_secret,
-    });
-  } catch (error) {
-    console.error("Error creating payment intent:", error);
-    res.status(500).json({
-      error: "Something went wrong while creating the payment intent",
-    });
+      res.status(201).json({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({
+        error: "Something went wrong while creating the payment intent",
+      });
+    }
   }
-});
+);
 
 router.post(
   "/listings/:id/complete-purchase",
+  logActivity(),
   verifyToken,
   async (req, res) => {
     const { id: listingId } = req.params;
@@ -480,7 +510,7 @@ router.post(
         listingImage: listingImage,
       };
 
-      await sendNotification(sellerNotification,io);
+      await sendNotification(sellerNotification, io);
 
       const buyerNotificationContent = `You just successfully purchased "${updatedListing.title}". Please leave a review!`;
 
@@ -494,7 +524,7 @@ router.post(
         listingImage: listingImage,
       };
 
-      await sendNotification(buyerNotification,io);
+      await sendNotification(buyerNotification, io);
       // Fetch users who have liked this item
       const likes = await prisma.like.findMany({
         where: { itemId: parseInt(listingId) },
@@ -531,81 +561,86 @@ router.post(
   }
 );
 
-router.post("/listings/:id/reviews", verifyToken, async (req, res) => {
-  const { content, rating, sellerId } = req.body;
-  const { id: listingId } = req.params;
-  const reviewerId = req.user.id;
+router.post(
+  "/listings/:id/reviews",
+  verifyToken,
+  logActivity(),
+  async (req, res) => {
+    const { content, rating, sellerId } = req.body;
+    const { id: listingId } = req.params;
+    const reviewerId = req.user.id;
 
-  if (rating < 1 || rating > 5) {
-    return res.status(400).json({ error: "Rating must be between 1 and 5" });
-  }
-
-  try {
-    // Check if the user has purchased the item
-    const transaction = await prisma.transaction.findFirst({
-      where: {
-        listingId: parseInt(listingId),
-        buyerId: reviewerId,
-      },
-    });
-
-    if (!transaction) {
-      return res
-        .status(403)
-        .json({ error: "You must purchase the item to leave a review" });
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ error: "Rating must be between 1 and 5" });
     }
 
-    // if the user has already reviewed this listing
-    const existingReview = await prisma.review.findFirst({
-      where: {
-        reviewerId,
-        listingId: parseInt(listingId),
-      },
-    });
+    try {
+      // Check if the user has purchased the item
+      const transaction = await prisma.transaction.findFirst({
+        where: {
+          listingId: parseInt(listingId),
+          buyerId: reviewerId,
+        },
+      });
 
-    if (existingReview) {
-      return res
-        .status(400)
-        .json({ error: "You have already reviewed this listing" });
+      if (!transaction) {
+        return res
+          .status(403)
+          .json({ error: "You must purchase the item to leave a review" });
+      }
+
+      // if the user has already reviewed this listing
+      const existingReview = await prisma.review.findFirst({
+        where: {
+          reviewerId,
+          listingId: parseInt(listingId),
+        },
+      });
+
+      if (existingReview) {
+        return res
+          .status(400)
+          .json({ error: "You have already reviewed this listing" });
+      }
+
+      const review = await prisma.review.create({
+        data: {
+          content,
+          rating,
+          reviewer: { connect: { id: reviewerId } },
+          seller: { connect: { id: parseInt(sellerId) } },
+          listing: { connect: { id: parseInt(listingId) } },
+        },
+      });
+
+      // Update seller's average rating and review count
+      const reviews = await prisma.review.findMany({
+        where: { sellerId: parseInt(sellerId) },
+      });
+
+      const reviewCount = reviews.length;
+      const averageRating =
+        reviews.reduce((acc, review) => acc + review.rating, 0) / reviewCount;
+
+      await prisma.user.update({
+        where: { id: parseInt(sellerId) },
+        data: {
+          reviewCount,
+          averageRating,
+        },
+      });
+
+      res.status(201).json(review);
+    } catch (error) {
+      console.error("Error creating review:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while creating the review" });
     }
-
-    const review = await prisma.review.create({
-      data: {
-        content,
-        rating,
-        reviewer: { connect: { id: reviewerId } },
-        seller: { connect: { id: parseInt(sellerId) } },
-        listing: { connect: { id: parseInt(listingId) } },
-      },
-    });
-
-    // Update seller's average rating and review count
-    const reviews = await prisma.review.findMany({
-      where: { sellerId: parseInt(sellerId) },
-    });
-
-    const reviewCount = reviews.length;
-    const averageRating =
-      reviews.reduce((acc, review) => acc + review.rating, 0) / reviewCount;
-
-    await prisma.user.update({
-      where: { id: parseInt(sellerId) },
-      data: {
-        reviewCount,
-        averageRating,
-      },
-    });
-
-    res.status(201).json(review);
-  } catch (error) {
-    console.error("Error creating review:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while creating the review" });
   }
-});
+);
 
-router.get("/users/:id/reviews", async (req, res) => {
+router.get("/users/:id/reviews", logActivity(), async (req, res) => {
   const { id: sellerId } = req.params;
 
   try {
