@@ -35,12 +35,12 @@ router.post(
       condition,
       subcategory,
       brand,
-      auction,
+      isAuction,
       initialBid,
     } = req.body;
 
     const price =
-      auction === "true" ? parseFloat(initialBid) : parseFloat(req.body.price);
+      isAuction === "true" ? parseFloat(initialBid) : parseFloat(req.body.price);
 
     if (isNaN(price)) {
       return res
@@ -63,11 +63,11 @@ router.post(
           imageUrls,
           sellerId: parseInt(sellerId),
           status: "active",
-          auction: auction === "true",
-          initialBid: auction === "true" ? price : null,
-          currentBid: auction === "true" ? price : null,
+          isAuction: isAuction === "true",
+          initialBid: isAuction === "true" ? price : null,
+          currentBid: isAuction === "true" ? price : null,
           auctionEndTime:
-            auction === "true"
+            isAuction === "true"
               ? new Date(Date.now() + 24 * 60 * 60 * 1000)
               : null,
         },
@@ -681,7 +681,7 @@ router.get("/listings/auctions/all", verifyToken, async (req, res) => {
   try {
     const auctionListings = await prisma.listing.findMany({
       where: {
-        auction: true,
+        isAuction: true,
         status: "active",
       },
       orderBy: {
