@@ -8,6 +8,7 @@ const { buildFilters } = require("../utils/buildFilters.js");
 const { sendNotification } = require("../services/notificationService");
 const NotificationType = require("../Enums/NotificationType.js");
 const logActivity = require("../middlewares/logActivity");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const prisma = new PrismaClient();
 const router = express.Router();

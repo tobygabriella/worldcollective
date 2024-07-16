@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import AppHeader from "../Headers/AppHeader";
-import ReviewModal from "../Review/CreateReviewModal";
+import CreateReviewModal from "../Review/CreateReviewModal";
 import "./ConfirmationPage.css";
 import useReview from "../CustomHooks/useReview";
 
@@ -35,13 +35,14 @@ const ConfirmationPage = () => {
         <button onClick={handleBackToListings}>Back to your profile</button>
         <button onClick={handleLeaveReview}>Leave a Review</button>
       </div>
-      <ReviewModal
-        isOpen={isReviewModalOpen}
-        onClose={closeReviewModal}
-        successMessage={successMessage}
-        errorMessage={errorMessage}
-        onSubmit={(review) => handleReviewSubmit(listingId, sellerId, review)}
-      />
+      {isReviewModalOpen && (
+        <CreateReviewModal
+          onClose={closeReviewModal}
+          successMessage={successMessage}
+          errorMessage={errorMessage}
+          onSubmit={(review) => handleReviewSubmit(listingId, sellerId, review)}
+        />
+      )}
     </div>
   );
 };
