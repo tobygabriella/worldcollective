@@ -11,6 +11,7 @@ const ListingItem = ({
   imageUrls,
   status,
   liked: initialLiked,
+  isAuction,
 }) => {
   const [liked, setLiked] = useState(initialLiked);
 
@@ -37,11 +38,19 @@ const ListingItem = ({
   };
 
   return (
-    <Link to={`/listings/${id}`} className="listingItemLink">
+    <Link
+      to={`/listings/${id}`}
+      className={`listingItemLink ${isAuction ? "auction" : ""}`}
+    >
       <div className="listingItem">
         <div className="imageWrapper">
           <img src={imageUrls[0]} alt={title} className="listingItemImage" />
           {status === "sold" && <div className="soldOverlay">SOLD</div>}
+          {isAuction && (
+            <div className="auctionOverlay">
+              <i className="fas fa-video"></i> Live Auction
+            </div>
+          )}
         </div>
         <div className="listingItemDetails">
           <h3 className="listingItemTitle">{title}</h3>

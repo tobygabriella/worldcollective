@@ -6,7 +6,6 @@ import DescriptionSection from "./DescriptionSection";
 import InfoSection from "./InfoSection";
 import { useNavigate } from "react-router-dom";
 
-
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const CreateListing = () => {
@@ -18,6 +17,8 @@ const CreateListing = () => {
     brand: "",
     condition: "",
     price: "",
+    auction: false,
+    initialBid: "",
   });
   const [photos, setPhotos] = useState([]);
   const [error, setError] = useState("");
@@ -84,6 +85,18 @@ const CreateListing = () => {
             handlePhotoUpload={handlePhotoUpload}
             handlePhotoDelete={handlePhotoDelete}
           />
+          <div className="auctionSection">
+            <label>
+              <input
+                type="checkbox"
+                checked={formInput.auction}
+                onChange={(e) =>
+                  setFormInput({ ...formInput, auction: e.target.checked })
+                }
+              />
+              Auction
+            </label>
+          </div>
           <DescriptionSection
             formInput={formInput}
             setFormInput={setFormInput}
