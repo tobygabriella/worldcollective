@@ -1,8 +1,9 @@
 import React from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { useAuth } from "../Contexts/AuthContext";
 import AppHeader from "../Headers/AppHeader";
 import "./ListingDetails.css";
+import { getInitials } from "../utils/initialsUtils";
 
 const ListingDetails = () => {
   const { listing } = useOutletContext();
@@ -36,6 +37,11 @@ const ListingDetails = () => {
   const handleBuyNow = () => {
     navigate(`buy`);
   };
+
+  const initials = getInitials(
+    listing.seller.firstname,
+    listing.seller.lastname
+  );
 
   return (
     <div className="listingDetailsContainer">
@@ -81,13 +87,15 @@ const ListingDetails = () => {
             )
           )}
           <div className="sellerInfo">
-            <img
-              src="default-profile.png"
-              alt={user?.username}
-              className="sellerProfilePicture"
-            />
+            <Link to={`/users/${listing.seller.username}`}>
+              <div className="circle">
+                <span className="circleInitials">{initials}</span>
+              </div>
+            </Link>
             <div>
-              <p>{user?.username}</p>
+              <Link to={`/users/${listing.seller.username}`}>
+                @{listing.seller.username}
+              </Link>
             </div>
           </div>
         </div>

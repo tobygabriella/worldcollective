@@ -91,7 +91,9 @@ const PaymentPage = () => {
 
           if (response.ok) {
             setSuccess(true);
-            navigate("/confirmation");
+            navigate("/confirmation", {
+              state: { listingId: listing.id, sellerId: listing.sellerId },
+            });
           } else {
             console.error("Failed to update transaction status on the server");
           }

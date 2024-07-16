@@ -28,7 +28,25 @@ model User {
   followers      Follow[]      @relation("following")
   followings     Follow[]      @relation("follower")
   transactions   Transaction[]   @relation("BuyerTransactions")
+  reviewsWritten Review[]   @relation("Reviewer")
+  reviewsReceived Review[]   @relation("Seller")
+  averageRating      Float?     @default(0.0)
+  reviewCount        Int        @default(0)
   }
+
+  model Review {
+  id          Int      @id @default(autoincrement())
+  content     String
+  rating      Int      // Rating from 1 to 5
+  reviewerId  Int
+  sellerId    Int
+  listingId   Int
+  createdAt   DateTime @default(now())
+  reviewer    User     @relation(name: "Reviewer", fields: [reviewerId], references: [id])
+  seller      User     @relation(name: "Seller", fields: [sellerId], references: [id])
+  listing     Listing  @relation(fields: [listingId], references: [id])
+
+}
 
   model Follow {
   id         Int      @id @default(autoincrement())
@@ -56,6 +74,7 @@ model User {
   status      String
   likes       Like[]
   transactions Transaction[]  @relation("ListingTransactions")
+  reviews        Review[]
 }
 
  model Transaction {
