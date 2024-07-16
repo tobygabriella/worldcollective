@@ -36,6 +36,7 @@ model User {
   activities       UserActivity[]
   activePeriods    UserActivePeriods?
   verificationTokens EmailVerificationToken[]
+  bids            Bid[]
   }
 
 model EmailVerificationToken {
@@ -87,6 +88,21 @@ model EmailVerificationToken {
   likes       Like[]
   transactions Transaction[]  @relation("ListingTransactions")
   reviews        Review[]
+  auction         Boolean      @default(false)
+  initialBid      Decimal?
+  currentBid      Decimal?
+  auctionEndTime  DateTime?
+  bids            Bid[]
+}
+
+model Bid {
+  id         Int       @id @default(autoincrement())
+  amount     Decimal
+  listingId  Int
+  userId     Int
+  createdAt  DateTime  @default(now())
+  listing    Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
  model Transaction {
