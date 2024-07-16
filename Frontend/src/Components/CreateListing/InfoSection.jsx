@@ -93,11 +93,11 @@ const InfoSection = ({ formInput, setFormInput }) => {
         </select>
       </label>
       <label>
-        {formInput.auction ? "Initial Bid Price" : "Price"}
+        {formInput.isAuction ? "Initial Bid Price" : "Price"}
         <input
-          name={formInput.auction ? "initialBid" : "price"}
+          name={formInput.isAuction ? "initialBid" : "price"}
           type="number"
-          value={formInput.auction ? formInput.initialBid : formInput.price}
+          value={formInput.isAuction ? formInput.initialBid : formInput.price}
           onChange={handleChange}
           required
         />

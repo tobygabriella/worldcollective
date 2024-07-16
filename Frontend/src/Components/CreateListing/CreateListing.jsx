@@ -17,7 +17,7 @@ const CreateListing = () => {
     brand: "",
     condition: "",
     price: "",
-    auction: false,
+    isAuction: false,
     initialBid: "",
   });
   const [photos, setPhotos] = useState([]);
@@ -89,9 +89,9 @@ const CreateListing = () => {
             <label>
               <input
                 type="checkbox"
-                checked={formInput.auction}
+                checked={formInput.isAuction}
                 onChange={(e) =>
-                  setFormInput({ ...formInput, auction: e.target.checked })
+                  setFormInput({ ...formInput, isAuction: e.target.checked })
                 }
               />
               Auction
