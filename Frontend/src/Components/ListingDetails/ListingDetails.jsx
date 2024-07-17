@@ -1,14 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { useAuth } from "../Contexts/AuthContext";
 import AppHeader from "../Headers/AppHeader";
 import "./ListingDetails.css";
 import { getInitials } from "../utils/initialsUtils";
+import PlaceBidModal from "../Bid/PlaceBidModal";
+import Countdown from "../Countdown/Countdown";
 
 const ListingDetails = () => {
   const { listing } = useOutletContext();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [isBidModalOpen, setIsBidModalOpen] = useState(false);
 
   if (!listing) {
     return;
@@ -38,12 +41,16 @@ const ListingDetails = () => {
     navigate(`buy`);
   };
 
-  const handlePlaceBid = () => {};
-
   const initials = getInitials(
     listing.seller.firstname,
     listing.seller.lastname
   );
+
+  const handlePlaceBid = () => {
+    setIsBidModalOpen(true);
+  };
+
+  const displayPrice = listing.isAuction ? listing.currentBid : listing.price;
 
   return (
     <div className="listingDetailsContainer">
@@ -66,7 +73,7 @@ const ListingDetails = () => {
         </div>
         <div className="listingInfo">
           <h2>
-            <strong>${listing.price}</strong>
+            <strong>${displayPrice}</strong>
           </h2>
           <h2>{listing.title}</h2>
           <p>{listing.description}</p>
@@ -78,6 +85,9 @@ const ListingDetails = () => {
           </p>
           {user?.id === listing.sellerId ? (
             <div className="listingActions">
+              {listing.isAuction && (
+                <button onClick={handlePlaceBid}>View All Bids</button>
+              )}
               {!listing.isAuction && (
                 <button onClick={handleDelete}>Delete Listing</button>
               )}
@@ -86,9 +96,16 @@ const ListingDetails = () => {
             listing.status !== "sold" && (
               <>
                 {listing.isAuction ? (
-                  <button className="placeBidButton" onClick={handlePlaceBid}>
-                    Place a Bid
-                  </button>
+                  <>
+                    <button className="placeBidButton" onClick={handlePlaceBid}>
+                      Place a Bid
+                    </button>
+                    {listing.auctionEndTime && (
+                      <div className="auctionCountdown">
+                        <Countdown endTime={listing.auctionEndTime} />
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <button className="buyNowButton" onClick={handleBuyNow}>
                     Buy Now
@@ -97,20 +114,30 @@ const ListingDetails = () => {
               </>
             )
           )}
-          <div className="sellerInfo">
-            <Link to={`/users/${listing.seller.username}`}>
-              <div className="circle">
-                <span className="circleInitials">{initials}</span>
-              </div>
-            </Link>
-            <div>
+          {listing.seller && (
+            <div className="sellerInfo">
               <Link to={`/users/${listing.seller.username}`}>
-                @{listing.seller.username}
+                <div className="circle">
+                  <span className="circleInitials">{initials}</span>
+                </div>
               </Link>
+              <div>
+                <Link to={`/users/${listing.seller.username}`}>
+                  @{listing.seller.username}
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
+      {isBidModalOpen && (
+        <PlaceBidModal
+          onClose={() => setIsBidModalOpen(false)}
+          listingId={listing.id}
+          initialPrice={listing.price}
+          isSeller={user?.id === listing.sellerId}
+        />
+      )}
     </div>
   );
 };
