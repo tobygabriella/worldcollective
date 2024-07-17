@@ -4,6 +4,7 @@ const NotificationType = {
   PURCHASE: "PURCHASE",
   LIKE_PURCHASE: "LIKE_PURCHASE",
   REVIEW_REMINDER: "REVIEW_REMINDER",
+  BID:"BID",
 };
 
 module.exports = NotificationType;
