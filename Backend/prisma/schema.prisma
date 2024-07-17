@@ -102,6 +102,7 @@ enum NotificationType {
   LIKE
   PURCHASE
   LIKE_PURCHASE
+  REVIEW_REMINDER
 }
 
 model Notification {
@@ -113,6 +114,7 @@ model Notification {
   user      User      @relation(fields: [userId], references: [id])
   type      NotificationType
   usernameTarget  String?
+  sellerId         Int?
   listingId  Int?
   listingImage String?
   interactionCount Int     @default(0)

@@ -5,8 +5,6 @@ import './AppHeader.css';
 import { getInitials } from "../utils/initialsUtils";
 import { useSocket } from "../Contexts/SocketContext";
 
-const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
-
 const AppHeader = () => {
   const { isAuthenticated, user, logout } = useAuth();
    const { unreadCount } = useSocket();
@@ -27,7 +25,6 @@ const AppHeader = () => {
 
   const handleNotificationsClick = async () => {
     navigate("/notifications");
-
   };
 
   const showWelcome = location.pathname === '/';
