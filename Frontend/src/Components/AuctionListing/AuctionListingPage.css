@@ -1,0 +1,19 @@
+.auctionListingsPage {
+  padding: 20px;
+}
+
+.auctionListingsContent {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.auctionListingsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.auctionListingsGrid .listingItem {
+  flex: 1 1 calc(25% - 20px);
+  box-sizing: border-box;
+}
