@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./ListingItem.css";
+import Countdown from "../Countdown/Countdown";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -9,9 +10,11 @@ const ListingItem = ({
   title,
   price,
   imageUrls,
+  currentBid,
   status,
   liked: initialLiked,
   isAuction,
+  auctionEndTime,
 }) => {
   const [liked, setLiked] = useState(initialLiked);
 
@@ -37,6 +40,8 @@ const ListingItem = ({
     }
   };
 
+  const displayPrice = isAuction ? currentBid : price;
+
   return (
     <Link
       to={`/listings/${id}`}
@@ -46,15 +51,15 @@ const ListingItem = ({
         <div className="imageWrapper">
           <img src={imageUrls[0]} alt={title} className="listingItemImage" />
           {status === "sold" && <div className="soldOverlay">SOLD</div>}
-          {isAuction && (
+          {isAuction && auctionEndTime && (
             <div className="auctionOverlay">
-              <i className="fas fa-video"></i> Live Auction
+              <Countdown endTime={auctionEndTime} />
             </div>
           )}
         </div>
         <div className="listingItemDetails">
           <h3 className="listingItemTitle">{title}</h3>
-          <p className="listingItemPrice">${price}</p>
+          <p className="listingItemPrice">${displayPrice}</p>
           <div className="listingItemButtons">
             <span
               onClick={toggleLike}
