@@ -30,11 +30,18 @@ const PlaceBidModal = ({ onClose, listingId, initialPrice, isSeller }) => {
   };
 
   const handleBidSubmit = async () => {
+    const bidAmount = parseInt(newBid);
     const currentHighestBid = Math.max(
       initialPrice,
       ...bids.map((bid) => bid.amount)
     );
-    if (parseFloat(newBid) <= currentHighestBid) {
+
+    if (isNaN(bidAmount) || bidAmount <= 0) {
+      setError("Please enter a valid integer bid amount.");
+      return;
+    }
+
+    if (bidAmount <= currentHighestBid) {
       setError("Your bid must be higher than the current highest bid.");
       return;
     }

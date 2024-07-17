@@ -50,6 +50,8 @@ const ListingDetails = () => {
     setIsBidModalOpen(true);
   };
 
+  const isAuctionEnded = new Date() > new Date(listing.auctionEndTime);
+
   const displayPrice = listing.isAuction ? listing.currentBid : listing.price;
 
   return (
@@ -96,16 +98,23 @@ const ListingDetails = () => {
             listing.status !== "sold" && (
               <>
                 {listing.isAuction ? (
-                  <>
-                    <button className="placeBidButton" onClick={handlePlaceBid}>
-                      Place a Bid
-                    </button>
-                    {listing.auctionEndTime && (
-                      <div className="auctionCountdown">
-                        <Countdown endTime={listing.auctionEndTime} />
-                      </div>
-                    )}
-                  </>
+                  !isAuctionEnded ? (
+                    <>
+                      <button
+                        className="placeBidButton"
+                        onClick={handlePlaceBid}
+                      >
+                        Place a Bid
+                      </button>
+                      {listing.auctionEndTime && (
+                        <div className="auctionCountdown">
+                          <Countdown endTime={listing.auctionEndTime} />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="error">The auction has ended.</p>
+                  )
                 ) : (
                   <button className="buyNowButton" onClick={handleBuyNow}>
                     Buy Now
@@ -136,6 +145,7 @@ const ListingDetails = () => {
           listingId={listing.id}
           initialPrice={listing.price}
           isSeller={user?.id === listing.sellerId}
+          auctionEndTime={listing.auctionEndTime}
         />
       )}
     </div>
