@@ -40,9 +40,13 @@ const sendNotification = async (notificationData, io) => {
   });
 
   let savedNotification;
-  if (existingNotification) {
+  if (
+    existingNotification &&
+    notificationData.type !== "BID" &&
+    notificationData.type !== "PURCHASE"
+  ) {
     //emit an event to remove old notification
-    if (userSockets.length > 0) {
+    if (existingNotification.id && userSockets.length > 0) {
       userSockets[0].emit("removeNotification", existingNotification.id);
     }
     if (notificationData.type === "LIKE") {
@@ -269,7 +273,7 @@ const scheduleNotifications = async (userId, newNotification, io) => {
 
   const bestHour = await performKMeansClustering(userId);
 
-  const job = schedule.scheduleJob({hour: bestHour, minute:0}, async () => {
+  const job = schedule.scheduleJob({ hour: bestHour, minute: 0 }, async () => {
     const notifications = pendingNotifications.get(userId) || [];
     if (notifications.length > 0) {
       if (userSockets.length > 0) {
