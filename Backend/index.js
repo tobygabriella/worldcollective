@@ -10,6 +10,8 @@ const authRoutes = require("./routes/auth");
 const listingRoutes = require("./routes/listings");
 const notificationRoutes = require("./routes/notifications");
 const userRoutes = require("./routes/users");
+const schedule = require("node-schedule");
+const fetch = require("node-fetch");
 
 const app = express();
 const server = http.createServer(app);
@@ -52,11 +54,35 @@ io.on("connection", (socket) => {
     delete socket.userId;
   });
 });
-
 // Import services to run background tasks
 const {
   updateImportantNotificationTypes,
 } = require("./services/notificationService");
 setInterval(updateImportantNotificationTypes, 60 * 1000);
 
+const runDailyAuctions = async () => {
+  try {
+    const response = await fetch("http://localhost:3002/run-daily-auctions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("Daily auctions processed successfully:", result.message);
+  } catch (error) {
+    console.error("Error processing daily auctions:", error);
+  }
+};
+
+// Schedule the task to run at 11:59 PM every day
+const job = schedule.scheduleJob("59 23 * * *", () => {
+  console.log("Running daily auctions at 11:59 PM");
+  runDailyAuctions();
+});
 server.listen(port, () => {});
