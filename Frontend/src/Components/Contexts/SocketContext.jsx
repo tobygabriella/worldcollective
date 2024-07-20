@@ -15,26 +15,27 @@ export const SocketProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const fetchNotifications = async () => {
-    try {
-      const response = await fetch(`${API_KEY}/notifications`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data);
-        setUnreadCount(data.filter((notif) => !notif.isRead).length);
-      } else {
-        throw new Error("Failed to fetch notifications");
-      }
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
+const fetchNotifications = async (type = "") => {
+  try {
+    const query = type ? `?type=${type}` : "";
+    const response = await fetch(`${API_KEY}/notifications${query}`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    if (response.ok) {
+      const data = await response.json();
+      setNotifications(data);
+      setUnreadCount(data.filter((notif) => !notif.isRead).length);
+    } else {
+      throw new Error("Failed to fetch notifications");
     }
-  };
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+  }
+};
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -63,6 +64,12 @@ export const SocketProvider = ({ children }) => {
         setNotifications((prev) => [formattedNotification, ...prev]);
         setUnreadCount((prev) => prev + 1);
       }
+    });
+
+    newSocket.on("removeNotification", (notificationId) => {
+      setNotifications((prev) =>
+        prev.filter((notif) => notif.id !== notificationId)
+      );
     });
 
     setSocket(newSocket);
@@ -101,6 +108,7 @@ export const SocketProvider = ({ children }) => {
         notifications,
         unreadCount,
         markAsRead,
+        fetchNotifications,
       }}
     >
       {children}

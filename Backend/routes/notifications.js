@@ -1,7 +1,6 @@
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
 const verifyToken = require("../middlewares/auth");
-const { sendNotification } = require("../services/notificationService");
 const { formatDistanceToNow } = require("date-fns");
 
 const prisma = new PrismaClient();
@@ -33,19 +32,54 @@ router.post("/notifications", verifyToken, async (req, res) => {
 
 router.get("/notifications", verifyToken, async (req, res) => {
   const userId = req.user.id;
+  const { type } = req.query;
 
   try {
+    const whereClause = { userId: parseInt(userId) };
+
+    if (type) {
+      whereClause.type = type;
+    }
+
     const notifications = await prisma.notification.findMany({
-      where: { userId: parseInt(userId) },
+      where: whereClause,
       orderBy: { createdAt: "desc" },
     });
 
-    const formattedNotifications = notifications.map((notification) => ({
-      ...notification,
-      timeAgo: formatDistanceToNow(new Date(notification.createdAt), {
-        addSuffix: true,
-      }),
-    }));
+    const groupedNotifications = notifications.reduce((acc, notif) => {
+      const key = `${notif.type}-${notif.listingId || ""}`;
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(notif);
+      return acc;
+    }, {});
+
+    const formattedNotifications = Object.values(groupedNotifications).map(
+      (group) => {
+        if (group.length > 1 && group[0].type === "LIKE") {
+          const users = group.map((notif) => notif.usernameTarget).slice(0, 3);
+          const othersCount = group.length - users.length;
+          const content = `${users.join(", ")}${
+            othersCount > 0 ? `and ${othersCount} others` : ""
+          } liked your listing.`;
+          return {
+            ...group[0],
+            content,
+            timeAgo: formatDistanceToNow(new Date(group[0].createdAt), {
+              addSuffix: true,
+            }),
+          };
+        } else {
+          return {
+            ...group[0],
+            timeAgo: formatDistanceToNow(new Date(group[0].createdAt), {
+              addSuffix: true,
+            }),
+          };
+        }
+      }
+    );
 
     res.status(200).json(formattedNotifications);
   } catch (error) {
@@ -93,11 +127,9 @@ router.post(
       res.status(200).json({ message: "Notification marked as read" });
     } catch (error) {
       console.error("Error marking notification as read:", error);
-      res
-        .status(500)
-        .json({
-          error: "Something went wrong while updating the notification",
-        });
+      res.status(500).json({
+        error: "Something went wrong while updating the notification",
+      });
     }
   }
 );

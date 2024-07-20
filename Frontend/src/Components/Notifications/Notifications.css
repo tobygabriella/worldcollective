@@ -81,3 +81,24 @@ h3 {
   justify-content: center;
   margin-right: 10px;
 }
+.filterButtons {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.filterButtons button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  background-color: red;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.filterButtons button:hover {
+  background-color: lightcoral;
+}

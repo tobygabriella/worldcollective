@@ -11,7 +11,7 @@ import useReview from "../CustomHooks/useReview.jsx";
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const Notifications = () => {
-  const { notifications, markAsRead } = useSocket();
+  const { notifications, markAsRead, fetchNotifications } = useSocket();
   const { startLoading, isLoading, stopLoading } = useLoading();
   const navigate = useNavigate();
   const [currentSellerId, setCurrentSellerId] = useState(null);
@@ -24,13 +24,16 @@ const Notifications = () => {
     successMessage,
     errorMessage,
   } = useReview();
+  const [filterType, setFilterType] = useState("");
 
   useEffect(() => {
     startLoading();
-    if (notifications.length > 0) {
-      stopLoading();
-    }
-  }, [notifications]);
+    fetchNotifications(filterType).then(() => stopLoading());
+  }, [filterType]);
+
+  const handleTypeChange = (type) => {
+    setFilterType(type);
+  };
 
   if (isLoading) {
     return <Loading />;
@@ -50,19 +53,56 @@ const Notifications = () => {
       console.error("Error interacting with notification:", error);
     }
 
-    if (notif.type === "FOLLOW") {
-      navigate(`/users/${notif.usernameTarget}`);
-    } else if (
+    const isListingNotif =
       notif.type === "LIKE" ||
       notif.type === "PURCHASE" ||
-      notif.type === "LIKE_PURCHASE"
-    ) {
+      notif.type === "LIKE_PURCHASE";
+
+    if (notif.type === "FOLLOW") {
+      navigate(`/users/${notif.usernameTarget}`);
+    } else if (isListingNotif) {
       navigate(`/listings/${notif.listingId}`);
     } else if (notif.type === "REVIEW_REMINDER") {
       setCurrentListingId(notif.listingId);
       setCurrentSellerId(notif.sellerId);
       openReviewModal();
     }
+  };
+
+  const renderNotifications = (notifications) => {
+    return (
+      <ul className="notificationsList">
+        {notifications.map((notif, index) => {
+          const isListingNotif =
+            notif.type === "LIKE" ||
+            notif.type === "PURCHASE" ||
+            notif.type === "LIKE_PURCHASE";
+          return (
+            <li
+              key={index}
+              className={`notificationItem ${notif.isRead ? "read" : "unread"}`}
+              onClick={() => handleNotificationClick(notif)}
+            >
+              <div className="notificationContent">
+                {!notif.isRead && <span className="unreadIndicator"></span>}
+                {isListingNotif && notif.listingImage && (
+                  <img
+                    src={notif.listingImage}
+                    alt="Listing"
+                    className="notificationImage"
+                  />
+                )}
+                {notif.type === "FOLLOW" && (
+                  <div className="profileCircle"></div>
+                )}
+                <p>{notif.content}</p>
+              </div>
+              <span className="notificationTime">{notif.timeAgo}</span>
+            </li>
+          );
+        })}
+      </ul>
+    );
   };
 
   const importantNotifications = notifications.filter(
@@ -76,6 +116,18 @@ const Notifications = () => {
     <div className="notificationsPage">
       <AppHeader />
       <h2>Notifications</h2>
+      <div className="filterButtons">
+        <button onClick={() => handleTypeChange("")}>All Notifications</button>
+        <button onClick={() => handleTypeChange("FOLLOW")}>Follow</button>
+        <button onClick={() => handleTypeChange("LIKE")}>Like</button>
+        <button onClick={() => handleTypeChange("PURCHASE")}>Purchase</button>
+        <button onClick={() => handleTypeChange("LIKE_PURCHASE")}>
+          Like Purchase
+        </button>
+        <button onClick={() => handleTypeChange("REVIEW_REMINDER")}>
+          Review Reminder
+        </button>
+      </div>
       {notifications.length === 0 ? (
         <p>No notifications</p>
       ) : (
@@ -83,76 +135,14 @@ const Notifications = () => {
           {importantNotifications.length > 0 && (
             <div className="importantNotifications">
               <h3>Priority</h3>
-              <ul>
-                {importantNotifications.map((notif, index) => (
-                  <li
-                    key={index}
-                    className={`notificationItem ${
-                      notif.isRead ? "read" : "unread"
-                    }`}
-                    onClick={() => handleNotificationClick(notif)}
-                  >
-                    <div className="notificationContent">
-                      {!notif.isRead && (
-                        <span className="unreadIndicator"></span>
-                      )}
-                      {(notif.type === "LIKE" ||
-                        notif.type === "LIKE_PURCHASE" ||
-                        notif.type === "PURCHASE") &&
-                        notif.listingImage && (
-                          <img
-                            src={notif.listingImage}
-                            alt="Listing"
-                            className="notificationImage"
-                          />
-                        )}
-                      {notif.type === "FOLLOW" && (
-                        <div className="profileCircle"></div>
-                      )}
-                      <p>{notif.content}</p>
-                    </div>
-                    <span className="notificationTime">{notif.timeAgo}</span>
-                  </li>
-                ))}
-              </ul>
+              {renderNotifications(importantNotifications)}
             </div>
           )}
 
           {otherNotifications.length > 0 && (
             <div className="otherNotifications">
               <h3>More</h3>
-              <ul>
-                {otherNotifications.map((notif, index) => (
-                  <li
-                    key={index}
-                    className={`notificationItem ${
-                      notif.isRead ? "read" : "unread"
-                    }`}
-                    onClick={() => handleNotificationClick(notif)}
-                  >
-                    <div className="notificationContent">
-                      {!notif.isRead && (
-                        <span className="unreadIndicator"></span>
-                      )}
-                      {(notif.type === "LIKE" ||
-                        notif.type === "LIKE_PURCHASE" ||
-                        notif.type === "PURCHASE") &&
-                        notif.listingImage && (
-                          <img
-                            src={notif.listingImage}
-                            alt="Listing"
-                            className="notificationImage"
-                          />
-                        )}
-                      {notif.type === "FOLLOW" && (
-                        <div className="profileCircle"></div>
-                      )}
-                      <p>{notif.content}</p>
-                    </div>
-                    <span className="notificationTime">{notif.timeAgo}</span>
-                  </li>
-                ))}
-              </ul>
+              {renderNotifications(otherNotifications)}
             </div>
           )}
         </div>
