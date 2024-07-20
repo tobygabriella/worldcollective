@@ -3,9 +3,12 @@ const { PrismaClient } = require("@prisma/client");
 const verifyToken = require("../middlewares/auth");
 const { sendNotification } = require("../services/notificationService");
 const NotificationType = require("../Enums/NotificationType.js");
+const logActivity = require("../middlewares/logActivity");
 
 const prisma = new PrismaClient();
 const router = express.Router();
+router.use(verifyToken,logActivity());
+
 
 router.get("/users/:username", async (req, res) => {
   const { username } = req.params;
@@ -41,68 +44,74 @@ router.get("/users/:username", async (req, res) => {
   }
 });
 
-router.post("/users/:id/follow", verifyToken, async (req, res) => {
-  const { id: followingId } = req.params;
-  const followerId = req.user.id;
-  const io = req.app.locals.io;
+router.post(
+  "/users/:id/follow",
+  async (req, res) => {
+    const { id: followingId } = req.params;
+    const followerId = req.user.id;
+    const io = req.app.locals.io;
 
-  try {
-    const follow = await prisma.follow.create({
-      data: {
-        followerId: parseInt(followerId),
-        followingId: parseInt(followingId),
-      },
-    });
+    try {
+      const follow = await prisma.follow.create({
+        data: {
+          followerId: parseInt(followerId),
+          followingId: parseInt(followingId),
+        },
+      });
 
-    // Fetch follower and following user details
-    const follower = await prisma.user.findUnique({
-      where: { id: parseInt(followerId) },
-    });
+      // Fetch follower and following user details
+      const follower = await prisma.user.findUnique({
+        where: { id: parseInt(followerId) },
+      });
 
-    const followingUser = await prisma.user.findUnique({
-      where: { id: parseInt(followingId) },
-    });
+      const followingUser = await prisma.user.findUnique({
+        where: { id: parseInt(followingId) },
+      });
 
-    // Create a notification for the user being followed
-    const notificationContent = `@${follower.username} just followed you.`;
-    const notificationData = {
-      content: notificationContent,
-      userId: parseInt(followingId),
-      isRead: false,
-      type: NotificationType.FOLLOW,
-      usernameTarget: follower.username,
-    };
-    await sendNotification(notificationData, io);
+      // Create a notification for the user being followed
+      const notificationContent = `@${follower.username} just followed you.`;
+      const notificationData = {
+        content: notificationContent,
+        userId: parseInt(followingId),
+        isRead: false,
+        type: NotificationType.FOLLOW,
+        usernameTarget: follower.username,
+      };
+      await sendNotification(notificationData, io);
 
-    res.status(201).json(follow);
-  } catch (error) {
-    console.error("Error following user:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while following the user" });
+      res.status(201).json(follow);
+    } catch (error) {
+      console.error("Error following user:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while following the user" });
+    }
   }
-});
+);
 
-router.delete("/users/:id/unfollow", verifyToken, async (req, res) => {
-  const { id: followingId } = req.params;
-  const followerId = req.user.id;
+router.delete(
+  "/users/:id/unfollow",
+  async (req, res) => {
+    const { id: followingId } = req.params;
+    const followerId = req.user.id;
 
-  try {
-    await prisma.follow.deleteMany({
-      where: {
-        followerId: parseInt(followerId),
-        followingId: parseInt(followingId),
-      },
-    });
+    try {
+      await prisma.follow.deleteMany({
+        where: {
+          followerId: parseInt(followerId),
+          followingId: parseInt(followingId),
+        },
+      });
 
-    res.status(200).json({ message: "Unfollowed successfully" });
-  } catch (error) {
-    console.error("Error unfollowing user:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while unfollowing the user" });
+      res.status(200).json({ message: "Unfollowed successfully" });
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while unfollowing the user" });
+    }
   }
-});
+);
 
 router.get("/users/:id/followers", async (req, res) => {
   const { id } = req.params;

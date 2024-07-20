@@ -2,9 +2,12 @@ const express = require("express");
 const { PrismaClient } = require("@prisma/client");
 const verifyToken = require("../middlewares/auth");
 const { formatDistanceToNow } = require("date-fns");
+const logActivity = require("../middlewares/logActivity");
+const {clearScheduledJob}= require("../services/notificationService");
 
 const prisma = new PrismaClient();
 const router = express.Router();
+router.use(verifyToken, logActivity());
 
 router.post("/notifications", verifyToken, async (req, res) => {
   const { content, userId } = req.body;
@@ -30,12 +33,12 @@ router.post("/notifications", verifyToken, async (req, res) => {
   }
 });
 
-router.get("/notifications", verifyToken, async (req, res) => {
+router.get("/notifications", logActivity(), verifyToken, async (req, res) => {
   const userId = req.user.id;
   const { type } = req.query;
 
   try {
-    const whereClause = { userId: parseInt(userId) };
+    const whereClause = { userId: parseInt(userId), isPending: false };
 
     if (type) {
       whereClause.type = type;
@@ -151,24 +154,29 @@ router.get("/notifications/unread-count", verifyToken, async (req, res) => {
   }
 });
 
-router.put("/notifications/:id/interact", verifyToken, async (req, res) => {
-  const { id } = req.params;
+router.put(
+  "/notifications/:id/interact",
+  logActivity(),
+  verifyToken,
+  async (req, res) => {
+    const { id } = req.params;
 
-  try {
-    const notification = await prisma.notification.update({
-      where: { id: parseInt(id) },
-      data: {
-        interactionCount: { increment: 1 },
-        lastInteractedAt: new Date(), // Update the timestamp
-      },
-    });
+    try {
+      const notification = await prisma.notification.update({
+        where: { id: parseInt(id) },
+        data: {
+          interactionCount: { increment: 1 },
+          lastInteractedAt: new Date(), // Update the timestamp
+        },
+      });
 
-    res.status(200).json(notification);
-  } catch (error) {
-    console.error("Error recording notification interaction:", error);
-    res.status(500).json({ error: "Something went wrong" });
+      res.status(200).json(notification);
+    } catch (error) {
+      console.error("Error recording notification interaction:", error);
+      res.status(500).json({ error: "Something went wrong" });
+    }
   }
-});
+);
 
 router.get("/notifications/important", verifyToken, async (req, res) => {
   const userId = req.user.id;
@@ -183,6 +191,53 @@ router.get("/notifications/important", verifyToken, async (req, res) => {
   } catch (error) {
     console.error("Error fetching important notifications:", error);
     res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+router.get("/notifications/pending", verifyToken, async (req, res) => {
+  const userId = req.user.id; // Assuming you have user authentication set up
+
+  try {
+    const pendingNotifications = await prisma.notification.findMany({
+      where: {
+        userId,
+        isPending: true,
+      },
+    });
+
+    clearScheduledJob(userId);
+
+    await prisma.notification.updateMany({
+      where: {
+        userId,
+        isPending: true,
+      },
+      data: {
+        isPending: false,
+      },
+    });
+
+    res.json(pendingNotifications);
+  } catch (error) {
+    console.error("Error fetching pending notifications:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router.get("/notifications/pending/count", verifyToken, async (req, res) => {
+  const userId = req.user.id; // Assuming you have user authentication set up
+
+  try {
+    const pendingCount = await prisma.notification.count({
+      where: {
+        userId,
+        isPending: true,
+      },
+    });
+
+    res.json({ count: pendingCount });
+  } catch (error) {
+    console.error("Error fetching pending notifications count:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
