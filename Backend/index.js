@@ -74,7 +74,6 @@ const runDailyAuctions = async () => {
     }
 
     const result = await response.json();
-    console.log("Daily auctions processed successfully:", result.message);
   } catch (error) {
     console.error("Error processing daily auctions:", error);
   }
