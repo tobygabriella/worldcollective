@@ -4,7 +4,7 @@ import { useAuth } from "../Contexts/AuthContext";
 import AppHeader from "../Headers/AppHeader";
 import "./Home.css";
 import ListingItem from "../ListingItem/ListingItem";
-import { fetchListingsWithStatusAndLiked } from "../utils/likeStatusUtil.js";
+import { fetchListingsWithLiked } from "../utils/likeStatusUtil.js";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -23,9 +23,9 @@ const Home = () => {
         });
         if (response.ok) {
           const data = await response.json();
-          const listingsWithStatusAndLiked =
-            await fetchListingsWithStatusAndLiked(data.slice(0, 4));
-          setAuctionListings(listingsWithStatusAndLiked);
+          const listingsWithLiked =
+            await fetchListingsWithLiked(data.slice(0, 4));
+          setAuctionListings(listingsWithLiked);
         }
       } catch (error) {
         console.error("Error fetching auction listings:", error);
