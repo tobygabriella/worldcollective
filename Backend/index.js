@@ -10,6 +10,7 @@ const authRoutes = require("./routes/auth");
 const listingRoutes = require("./routes/listings");
 const notificationRoutes = require("./routes/notifications");
 const userRoutes = require("./routes/users");
+const auctionRoute = require("./routes/runAuction");
 const schedule = require("node-schedule");
 const fetch = require("node-fetch");
 
@@ -40,6 +41,7 @@ app.use(authRoutes);
 app.use(listingRoutes);
 app.use(notificationRoutes);
 app.use(userRoutes);
+app.use(auctionRoute);
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
@@ -60,29 +62,23 @@ const {
 } = require("./services/notificationService");
 setInterval(updateImportantNotificationTypes, 60 * 1000);
 
-const runDailyAuctions = async () => {
-  try {
-    const response = await fetch("http://localhost:3002/run-daily-auctions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+const scheduleDailyAuctions = () => {
+  schedule.scheduleJob({ hour: 23, minute: 59 }, async () => {
+    try {
+      const response = await fetch("http://localhost:3002/run-daily-auctions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Error processing daily auctions:", error);
     }
-
-    const result = await response.json();
-    console.log("Daily auctions processed successfully:", result.message);
-  } catch (error) {
-    console.error("Error processing daily auctions:", error);
-  }
+  });
 };
 
-// Schedule the task to run at 11:59 PM every day
-const job = schedule.scheduleJob("59 23 * * *", () => {
-  console.log("Running daily auctions at 11:59 PM");
-  runDailyAuctions();
-});
+scheduleDailyAuctions();
 server.listen(port, () => {});
