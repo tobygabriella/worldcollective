@@ -7,6 +7,8 @@ import { getInitials } from "../utils/initialsUtils";
 import PlaceBidModal from "../Bid/PlaceBidModal";
 import Countdown from "../Countdown/Countdown";
 
+const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
+
 const ListingDetails = () => {
   const { listing } = useOutletContext();
   const { user } = useAuth();

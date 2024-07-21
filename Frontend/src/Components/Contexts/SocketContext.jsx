@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { formatDistanceToNow } from "date-fns";
+import Loading from "../Loading/Loading.jsx";
+import useLoading from "../CustomHooks/useLoading.jsx";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
@@ -15,8 +17,11 @@ export const SocketProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingNotificationsCount, setPendingNotificationsCount] = useState(0);
+  const { startLoading, isLoading, stopLoading } = useLoading();
+  const [isNotificationsLoaded, setIsNotificationsLoaded] = useState(false);
 
   const fetchNotifications = async (type = "") => {
+    startLoading();
     try {
       const query = type ? `?type=${type}` : "";
       const response = await fetch(`${API_KEY}/notifications${query}`, {
@@ -30,15 +35,19 @@ export const SocketProvider = ({ children }) => {
         const data = await response.json();
         setNotifications(data);
         setUnreadCount(data.filter((notif) => !notif.isRead).length);
+        setIsNotificationsLoaded(true);
       } else {
         throw new Error("Failed to fetch notifications");
       }
     } catch (error) {
       console.error("Error fetching notifications:", error);
+    } finally {
+      stopLoading();
     }
   };
 
   const fetchPendingCount = async () => {
+    startLoading();
     try {
       const response = await fetch(`${API_KEY}/notifications/pending/count`, {
         method: "GET",
@@ -53,6 +62,8 @@ export const SocketProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Error fetching pending notifications count:", error);
+    } finally {
+      stopLoading();
     }
   };
 
@@ -69,7 +80,9 @@ export const SocketProvider = ({ children }) => {
     });
 
     newSocket.on("connect", () => {
-      fetchNotifications();
+      if (!isNotificationsLoaded) {
+        fetchNotifications();
+      }
       fetchPendingCount();
     });
 
@@ -125,10 +138,9 @@ export const SocketProvider = ({ children }) => {
     }
   };
 
-  const clearPendingCount = async() =>{
-     setPendingNotificationsCount(0);
-  }
-
+  const clearPendingCount = async () => {
+    setPendingNotificationsCount(0);
+  };
 
   return (
     <SocketContext.Provider
@@ -141,8 +153,10 @@ export const SocketProvider = ({ children }) => {
         setNotifications,
         pendingNotificationsCount,
         clearPendingCount,
+        isNotificationsLoaded,
       }}
     >
+      {isLoading && <Loading />}
       {children}
     </SocketContext.Provider>
   );
