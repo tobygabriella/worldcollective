@@ -7,10 +7,8 @@ const logActivity = require("../middlewares/logActivity");
 
 const prisma = new PrismaClient();
 const router = express.Router();
-router.use(verifyToken,logActivity());
 
-
-router.get("/users/:username", async (req, res) => {
+router.get("/users/:username", verifyToken, logActivity(), async (req, res) => {
   const { username } = req.params;
   try {
     const user = await prisma.user.findFirst({
@@ -46,6 +44,8 @@ router.get("/users/:username", async (req, res) => {
 
 router.post(
   "/users/:id/follow",
+  verifyToken,
+  logActivity(),
   async (req, res) => {
     const { id: followingId } = req.params;
     const followerId = req.user.id;
@@ -91,6 +91,8 @@ router.post(
 
 router.delete(
   "/users/:id/unfollow",
+  verifyToken,
+  logActivity(),
   async (req, res) => {
     const { id: followingId } = req.params;
     const followerId = req.user.id;
@@ -113,40 +115,50 @@ router.delete(
   }
 );
 
-router.get("/users/:id/followers", async (req, res) => {
-  const { id } = req.params;
+router.get(
+  "/users/:id/followers",
+  verifyToken,
+  logActivity(),
+  async (req, res) => {
+    const { id } = req.params;
 
-  try {
-    const followers = await prisma.follow.findMany({
-      where: { followingId: parseInt(id) },
-      include: { follower: true },
-    });
+    try {
+      const followers = await prisma.follow.findMany({
+        where: { followingId: parseInt(id) },
+        include: { follower: true },
+      });
 
-    res.status(200).json(followers);
-  } catch (error) {
-    console.error("Error fetching followers:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while fetching followers" });
+      res.status(200).json(followers);
+    } catch (error) {
+      console.error("Error fetching followers:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while fetching followers" });
+    }
   }
-});
+);
 
-router.get("/users/:id/followings", async (req, res) => {
-  const { id } = req.params;
+router.get(
+  "/users/:id/followings",
+  verifyToken,
+  logActivity(),
+  async (req, res) => {
+    const { id } = req.params;
 
-  try {
-    const followings = await prisma.follow.findMany({
-      where: { followerId: parseInt(id) },
-      include: { following: true },
-    });
+    try {
+      const followings = await prisma.follow.findMany({
+        where: { followerId: parseInt(id) },
+        include: { following: true },
+      });
 
-    res.status(200).json(followings);
-  } catch (error) {
-    console.error("Error fetching followings:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while fetching followings" });
+      res.status(200).json(followings);
+    } catch (error) {
+      console.error("Error fetching followings:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while fetching followings" });
+    }
   }
-});
+);
 
 module.exports = router;
