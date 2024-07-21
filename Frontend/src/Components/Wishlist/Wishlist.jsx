@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import ListingItem from "../ListingItem/ListingItem";
 import ListingsContainer from "../ListingsContainer/ListingsContainer";
 import useLoading from "../CustomHooks/useLoading.jsx";
-import { fetchListingsWithStatusAndLiked } from "../utils/likeStatusUtil.js";
+import { fetchListingsWithLiked } from "../utils/likeStatusUtil.js";
 import Loading from "../Loading/Loading.jsx";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
@@ -21,9 +21,7 @@ const Wishlist = () => {
         });
         if (response.ok) {
           const data = await response.json();
-          const itemsWithStatusAndLiked = await fetchListingsWithStatusAndLiked(
-            data
-          );
+          const itemsWithStatusAndLiked = await fetchListingsWithLiked(data);
           setWishlistItems(itemsWithStatusAndLiked);
         } else {
           console.error("Failed to fetch wishlist items");

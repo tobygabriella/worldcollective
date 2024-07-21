@@ -3,7 +3,7 @@ import AppHeader from "../Headers/AppHeader";
 import ListingItem from "../ListingItem/ListingItem";
 import ListingsContainer from "../ListingsContainer/ListingsContainer";
 import { getInitials } from "../utils/initialsUtils";
-import { fetchListingsWithStatusAndLiked } from "../utils/likeStatusUtil";
+import { fetchListingsWithLiked } from "../utils/likeStatusUtil";
 import useLoading from "../CustomHooks/useLoading.jsx";
 import Loading from "../Loading/Loading.jsx";
 import "./ProfileContent.css";
@@ -28,9 +28,9 @@ const ProfileContent = ({
     const fetchListings = async () => {
       startLoading();
       try {
-        const listingsWithStatusAndLiked =
-          await fetchListingsWithStatusAndLiked(user.listings);
-        setListings(listingsWithStatusAndLiked);
+        const listingsWithLiked =
+          await fetchListingsWithLiked(user.listings);
+        setListings(listingsWithLiked);
       } catch (error) {
         console.error("Error fetching listings:", error);
       } finally {

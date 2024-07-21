@@ -7,7 +7,7 @@ import {
   getCategoryName,
   getSubcategoryName,
 } from "../utils/ListingInfoUtil.js";
-import { fetchListingsWithStatusAndLiked } from "../utils/likeStatusUtil.js";
+import { fetchListingsWithLiked } from "../utils/likeStatusUtil.js";
 import { getInitials } from "../utils/initialsUtils.js";
 import useLoading from "../CustomHooks/useLoading.jsx";
 import Loading from "../Loading/Loading.jsx";
@@ -67,9 +67,9 @@ const SearchResults = () => {
         }
 
         const data = await response.json();
-        const listingsWithStatusAndLiked =
-          await fetchListingsWithStatusAndLiked(data.listings);
-        setListings(listingsWithStatusAndLiked);
+        const listingsWithLiked =
+          await fetchListingsWithLiked(data.listings);
+        setListings(listingsWithLiked);
         setUsers(data.users);
       } catch (err) {
         setErrorState(err.message);
