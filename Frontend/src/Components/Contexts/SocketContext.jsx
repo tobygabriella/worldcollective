@@ -14,28 +14,47 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingNotificationsCount, setPendingNotificationsCount] = useState(0);
 
-const fetchNotifications = async (type = "") => {
-  try {
-    const query = type ? `?type=${type}` : "";
-    const response = await fetch(`${API_KEY}/notifications${query}`, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-    if (response.ok) {
-      const data = await response.json();
-      setNotifications(data);
-      setUnreadCount(data.filter((notif) => !notif.isRead).length);
-    } else {
-      throw new Error("Failed to fetch notifications");
+  const fetchNotifications = async (type = "") => {
+    try {
+      const query = type ? `?type=${type}` : "";
+      const response = await fetch(`${API_KEY}/notifications${query}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+        setUnreadCount(data.filter((notif) => !notif.isRead).length);
+      } else {
+        throw new Error("Failed to fetch notifications");
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
     }
-  } catch (error) {
-    console.error("Error fetching notifications:", error);
-  }
-};
+  };
+
+  const fetchPendingCount = async () => {
+    try {
+      const response = await fetch(`${API_KEY}/notifications/pending/count`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPendingNotificationsCount(data.count);
+      }
+    } catch (error) {
+      console.error("Error fetching pending notifications count:", error);
+    }
+  };
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -51,6 +70,7 @@ const fetchNotifications = async (type = "") => {
 
     newSocket.on("connect", () => {
       fetchNotifications();
+      fetchPendingCount();
     });
 
     newSocket.on("notification", (notification) => {
@@ -70,6 +90,10 @@ const fetchNotifications = async (type = "") => {
       setNotifications((prev) =>
         prev.filter((notif) => notif.id !== notificationId)
       );
+    });
+
+    newSocket.on("pendingNotificationCount", (count) => {
+      setPendingNotificationsCount(count);
     });
 
     setSocket(newSocket);
@@ -95,11 +119,16 @@ const fetchNotifications = async (type = "") => {
           notif.id === id ? { ...notif, isRead: true } : notif
         )
       );
-       setUnreadCount((prev) => prev - 1);
+      setUnreadCount((prev) => prev - 1);
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
   };
+
+  const clearPendingCount = async() =>{
+     setPendingNotificationsCount(0);
+  }
+
 
   return (
     <SocketContext.Provider
@@ -109,6 +138,9 @@ const fetchNotifications = async (type = "") => {
         unreadCount,
         markAsRead,
         fetchNotifications,
+        setNotifications,
+        pendingNotificationsCount,
+        clearPendingCount,
       }}
     >
       {children}

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { useAuth } from "../Contexts/AuthContext";
 import "./SignUp.css";
 import AuthHeader from "../Headers/AuthHeader";
 
@@ -10,10 +9,12 @@ const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 const Signup = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-   const [firstname, setFirstName] = useState("");
-   const [lastname, setLastName] = useState("");
+  const [firstname, setFirstName] = useState("");
+  const [email, setEmail] = useState("");
+  const [lastname, setLastName] = useState("");
   const [error, setError] = useState("");
-  const { login } = useAuth();
+  const [success, setSuccess] = useState("");
+
   const navigate = useNavigate();
 
   const handleSignup = async (e) => {
@@ -25,14 +26,19 @@ const Signup = () => {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ username, password, firstname, lastname }),
+        body: JSON.stringify({
+          username,
+          password,
+          email,
+          firstname,
+          lastname,
+        }),
       });
 
       if (response.ok) {
-        const user = await response.json();
-        login(user);
-
-        navigate("/");
+        setSuccess(
+          "Registration successful! Please check your email to verify your account."
+        );
       } else {
         setError("User already exists. Please try another username or log in");
       }
@@ -72,6 +78,14 @@ const Signup = () => {
             required
           />
           <input
+            type="email"
+            placeholder="Email"
+            className="inputField"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
             type="text"
             placeholder="Username"
             className="inputField"
@@ -88,6 +102,7 @@ const Signup = () => {
             required
           />
           {error && <p className="error">{error}</p>}
+          {success && <p className="success">{success}</p>}
           <button type="submit" className="signupButton">
             Sign up
           </button>

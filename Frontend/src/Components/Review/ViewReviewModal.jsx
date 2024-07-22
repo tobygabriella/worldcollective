@@ -10,7 +10,10 @@ const ViewReviewModal = ({ isOpen, onClose, userId }) => {
     const fetchReviews = async () => {
       if (!isOpen) return;
       try {
-        const response = await fetch(`${API_KEY}/users/${userId}/reviews`);
+        const response = await fetch(`${API_KEY}/users/${userId}/reviews`,{
+        method: "GET",
+        credentials: "include",
+      });
         if (response.ok) {
           const data = await response.json();
           setReviews(data);

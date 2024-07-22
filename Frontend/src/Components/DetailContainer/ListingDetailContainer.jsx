@@ -14,7 +14,10 @@ const ListingDetailContainer = () => {
     const fetchListing = async () => {
       startLoading();
       try {
-        const response = await fetch(`${API_KEY}/listings/${id}`);
+        const response = await fetch(`${API_KEY}/listings/${id}`, {
+          method: "GET",
+          credentials: "include",
+        });
         const data = await response.json();
         setListing(data);
       } catch (error) {

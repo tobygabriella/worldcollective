@@ -11,7 +11,14 @@ import useReview from "../CustomHooks/useReview.jsx";
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const Notifications = () => {
-  const { notifications, markAsRead, fetchNotifications } = useSocket();
+  const {
+    notifications,
+    markAsRead,
+    fetchNotifications,
+    setNotifications,
+    pendingNotificationsCount,
+    clearPendingCount,
+  } = useSocket();
   const { startLoading, isLoading, stopLoading } = useLoading();
   const navigate = useNavigate();
   const [currentSellerId, setCurrentSellerId] = useState(null);
@@ -34,6 +41,32 @@ const Notifications = () => {
   const handleTypeChange = (type) => {
     setFilterType(type);
   };
+
+  const handleLoadPendingNotifications = async () => {
+    try {
+      startLoading();
+      const response = await fetch(`${API_KEY}/notifications/pending`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications((prev) => [...data, ...prev]);
+        clearPendingCount();
+      }
+    } catch (error) {
+      console.error("Error loading pending notifications:", error);
+    } finally {
+      stopLoading();
+    }
+  };
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   if (isLoading) {
     return <Loading />;
@@ -128,6 +161,12 @@ const Notifications = () => {
           Review Reminder
         </button>
       </div>
+      <button
+        className="pendingNotificationsButton"
+        onClick={handleLoadPendingNotifications}
+      >
+        Pending Notifications ({pendingNotificationsCount})
+      </button>
       {notifications.length === 0 ? (
         <p>No notifications</p>
       ) : (

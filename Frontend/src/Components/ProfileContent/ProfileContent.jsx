@@ -9,8 +9,6 @@ import Loading from "../Loading/Loading.jsx";
 import "./ProfileContent.css";
 import ViewReviewModal from "../Review/ViewReviewModal.jsx";
 
-const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
-
 const ProfileContent = ({
   user,
   title,

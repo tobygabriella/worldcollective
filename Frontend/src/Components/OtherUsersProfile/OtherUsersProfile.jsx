@@ -34,7 +34,10 @@ const {
       startLoading();
       resetError();
       try {
-        const response = await fetch(`${API_KEY}/users/${username}`);
+        const response = await fetch(`${API_KEY}/users/${username}`, {
+          method: "GET",
+          credentials: "include",
+        });
         if (!response.ok) {
           throw new Error("Failed to fetch user details");
         }
