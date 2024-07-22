@@ -772,7 +772,7 @@ router.post(
   logActivity(),
   async (req, res) => {
     const { id: listingId } = req.params;
-    const { amount } = req.body;
+    const { amount, paymentMethodId } = req.body;
     const userId = req.user.id;
     const io = req.app.locals.io;
 
@@ -809,6 +809,7 @@ router.post(
           amount: bidAmount,
           listingId: parseInt(listingId),
           userId: parseInt(userId),
+          paymentMethodId: paymentMethodId,
         },
       });
 
@@ -873,6 +874,41 @@ router.post(
       res
         .status(500)
         .json({ error: "Something went wrong while posting the bid" });
+    }
+  }
+);
+
+router.post(
+  "/create-setup-intent",
+  verifyToken,
+  logActivity(),
+  async (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user || !user.stripeCustomerId) {
+        return res
+          .status(404)
+          .json({ error: "User or Stripe customer not found" });
+      }
+
+      const setupIntent = await stripe.setupIntents.create({
+        customer: user.stripeCustomerId,
+        payment_method_types: ["card"],
+      });
+
+      res.status(201).json({
+        clientSecret: setupIntent.client_secret,
+      });
+    } catch (error) {
+      console.error("Error creating setup intent:", error);
+      res.status(500).json({
+        error: "Something went wrong while creating the setup intent",
+      });
     }
   }
 );
