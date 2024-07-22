@@ -23,6 +23,7 @@ model User {
   password       String
   isVerified     Boolean   @default(false)
   createdAt      DateTime  @default(now())
+  stripeCustomerId String?
   listings       Listing[]
   likes          Like[]
   notifications  Notification[]
@@ -58,7 +59,6 @@ model EmailVerificationToken {
   reviewer    User     @relation(name: "Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
   seller      User     @relation(name: "Seller", fields: [sellerId], references: [id], onDelete: Cascade)
   listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-
 }
 
   model Follow {
@@ -103,6 +103,8 @@ model Bid {
   createdAt  DateTime  @default(now())
   listing    Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paymentIntentId  String?
+  paymentMethodId String?
 }
 
  model Transaction {
