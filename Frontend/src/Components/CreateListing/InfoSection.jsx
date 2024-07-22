@@ -10,13 +10,13 @@ import {
 } from "../utils/ListingInfoUtil.js";
 
 const InfoSection = ({ formInput, setFormInput }) => {
-    const handleChange = (e) => {
-      const { name, value } = e.target;
-      setFormInput((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormInput((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const subcategories = getSubcategory(formInput.category);
 
@@ -93,11 +93,11 @@ const InfoSection = ({ formInput, setFormInput }) => {
         </select>
       </label>
       <label>
-        Price
+        {formInput.isAuction ? "Initial Bid Price" : "Price"}
         <input
-          name="price"
+          name={formInput.isAuction ? "initialBid" : "price"}
           type="number"
-          value={formInput.price}
+          value={formInput.isAuction ? formInput.initialBid : formInput.price}
           onChange={handleChange}
           required
         />

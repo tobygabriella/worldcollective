@@ -38,6 +38,8 @@ const ListingDetails = () => {
     navigate(`buy`);
   };
 
+  const handlePlaceBid = () => {};
+
   const initials = getInitials(
     listing.seller.firstname,
     listing.seller.lastname
@@ -76,14 +78,23 @@ const ListingDetails = () => {
           </p>
           {user?.id === listing.sellerId ? (
             <div className="listingActions">
-              <button>Edit Listing</button>
-              <button onClick={handleDelete}>Delete Listing</button>
+              {!listing.isAuction && (
+                <button onClick={handleDelete}>Delete Listing</button>
+              )}
             </div>
           ) : (
             listing.status !== "sold" && (
-              <button className="buyNowButton" onClick={handleBuyNow}>
-                Buy Now
-              </button>
+              <>
+                {listing.isAuction ? (
+                  <button className="placeBidButton" onClick={handlePlaceBid}>
+                    Place a Bid
+                  </button>
+                ) : (
+                  <button className="buyNowButton" onClick={handleBuyNow}>
+                    Buy Now
+                  </button>
+                )}
+              </>
             )
           )}
           <div className="sellerInfo">

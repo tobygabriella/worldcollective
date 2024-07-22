@@ -121,3 +121,16 @@
   font-weight: bold;
   text-decoration: none;
 }
+
+.placeBidButton {
+  padding: 10px 20px;
+  background-color:red;
+  color: black;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.placeBidButton:hover {
+  background-color:lightcoral;
+}

@@ -1,4 +1,3 @@
-
 body {
   font-family: Arial, sans-serif;
 }
@@ -79,17 +78,18 @@ body {
 .priceSection {
   text-align: center;
   margin-bottom: 20px;
-  width:100%;
+  width: 100%;
 }
 
 .priceItems {
   display: flex;
   justify-content: space-between;
   margin-top: 10px;
-  width:100%;
+  width: 100%;
 }
 
-.priceItem, .styleItem{
+.priceItem,
+.styleItem {
   flex: 1;
   margin: 0 10px;
   padding: 20px;
@@ -114,7 +114,7 @@ body {
 .styleSection {
   text-align: center;
   margin-bottom: 20px;
-  width:100%;
+  width: 100%;
 }
 
 .styleItems {
@@ -128,7 +128,7 @@ body {
   transform: scale(1.05);
 }
 
-.logoutButton{
+.logoutButton {
   margin-top: 10px;
   padding: 10px;
   background-color: white;
@@ -136,4 +136,31 @@ body {
   cursor: pointer;
   color: black;
   border-radius: 5px;
+}
+
+.auctionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.auctionSection {
+  margin-top: 20px;
+  width: 100%;
+  text-align: center;
+}
+
+.auctionItems {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.seeMoreLink {
+  color: red;
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: 10px;
 }

@@ -1,37 +1,70 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../Contexts/AuthContext';
-import AppHeader from '../Headers/AppHeader';
-import './Home.css';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../Contexts/AuthContext";
+import AppHeader from "../Headers/AppHeader";
+import "./Home.css";
+import ListingItem from "../ListingItem/ListingItem";
+import { fetchListingsWithStatusAndLiked } from "../utils/likeStatusUtil.js";
+
+const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const Home = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout} = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
+
+  const [auctionListings, setAuctionListings] = useState([]);
+
+  useEffect(() => {
+    const fetchAuctionListings = async () => {
+      try {
+        const response = await fetch(`${API_KEY}/listings/auctions/all`, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const listingsWithStatusAndLiked =
+            await fetchListingsWithStatusAndLiked(data.slice(0, 4));
+          setAuctionListings(listingsWithStatusAndLiked);
+        }
+      } catch (error) {
+        console.error("Error fetching auction listings:", error);
+      }
+    };
+
+    fetchAuctionListings();
+  }, []);
+
+  const handleSeeMoreClick = () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+    } else {
+      navigate("/listings/auctions");
+    }
+  };
 
   const handleShopNowClick = (category) => {
     if (!isAuthenticated) {
-      navigate('/login');
-    }
-    else {
+      navigate("/login");
+    } else {
       navigate(`/listings/category/${category}`);
     }
   };
 
   const handlePriceClick = (maxPrice) => {
     if (!isAuthenticated) {
-      navigate('/login');
-    }
-    else {
+      navigate("/login");
+    } else {
       navigate(`/listings/price/${maxPrice}`);
     }
   };
 
   const handleStyleClick = (subcategory) => {
-      if (!isAuthenticated) {
-        navigate("/login");
-      } else {
-        navigate(`/listings/subcategory/${subcategory}`);
-      }
+    if (!isAuthenticated) {
+      navigate("/login");
+    } else {
+      navigate(`/listings/subcategory/${subcategory}`);
+    }
   };
 
   return (
@@ -39,7 +72,6 @@ const Home = () => {
       <header className="homeHeader">
         <AppHeader />
       </header>
-
       <div className="homeBody">
         <div className="shopSection">
           <div className="shopItem">
@@ -59,6 +91,20 @@ const Home = () => {
             >
               Shop now
             </button>
+          </div>
+        </div>
+
+        <div className="auctionSection">
+          <div className="auctionHeader">
+            <h3>Auctions of the day</h3>
+            <div className="seeMoreLink" onClick={handleSeeMoreClick}>
+              See more
+            </div>
+          </div>
+          <div className="auctionItems">
+            {auctionListings.map((listing) => (
+              <ListingItem key={listing.id} {...listing} isAuction />
+            ))}
           </div>
         </div>
 

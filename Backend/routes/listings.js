@@ -25,19 +25,28 @@ const upload = multer({ storage: storage });
 
 router.post(
   "/listings",
-  verifyToken,
   logActivity(),
   upload.array("images", 8),
   async (req, res) => {
     const {
       title,
       description,
-      price,
       category,
       condition,
       subcategory,
       brand,
+      isAuction,
+      initialBid,
     } = req.body;
+
+    const price =
+      isAuction === "true" ? parseFloat(initialBid) : parseFloat(req.body.price);
+
+    if (isNaN(price)) {
+      return res
+        .status(400)
+        .json({ error: "Invalid price or initial bid value" });
+    }
     const imageUrls = req.files.map((file) => file.path);
     const sellerId = req.user.id;
 
@@ -46,7 +55,7 @@ router.post(
         data: {
           title,
           description,
-          price: parseFloat(price),
+          price: price,
           category,
           subcategory,
           brand,
@@ -54,6 +63,13 @@ router.post(
           imageUrls,
           sellerId: parseInt(sellerId),
           status: "active",
+          isAuction: isAuction === "true",
+          initialBid: isAuction === "true" ? price : null,
+          currentBid: isAuction === "true" ? price : null,
+          auctionEndTime:
+            isAuction === "true"
+              ? new Date(Date.now() + 24 * 60 * 60 * 1000)
+              : null,
         },
       });
       res.status(201).json(newListing);
@@ -105,7 +121,7 @@ router.get("/listings/:id", logActivity(), async (req, res) => {
   }
 });
 
-router.delete("/listings/:id",verifyToken, async (req, res) => {
+router.delete("/listings/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const sellerId = req.user.id;
 
@@ -363,38 +379,34 @@ router.post(
   }
 );
 
-router.delete(
-  "/listings/:id/like",
-  verifyToken,
-  async (req, res) => {
-    const { id: itemId } = req.params;
-    const userId = req.user.id;
+router.delete("/listings/:id/like", verifyToken, async (req, res) => {
+  const { id: itemId } = req.params;
+  const userId = req.user.id;
 
-    try {
-      const existingLike = await prisma.like.findFirst({
-        where: {
-          userId: parseInt(userId),
-          itemId: parseInt(itemId),
-        },
-      });
+  try {
+    const existingLike = await prisma.like.findFirst({
+      where: {
+        userId: parseInt(userId),
+        itemId: parseInt(itemId),
+      },
+    });
 
-      if (!existingLike) {
-        return res.status(400).json({ message: "Item is not liked" });
-      }
-
-      await prisma.like.delete({
-        where: { id: existingLike.id },
-      });
-
-      res.status(200).json({ message: "Item unliked successfully" });
-    } catch (error) {
-      console.error("Error unliking item:", error);
-      res
-        .status(500)
-        .json({ error: "Something went wrong while unliking the item" });
+    if (!existingLike) {
+      return res.status(400).json({ message: "Item is not liked" });
     }
+
+    await prisma.like.delete({
+      where: { id: existingLike.id },
+    });
+
+    res.status(200).json({ message: "Item unliked successfully" });
+  } catch (error) {
+    console.error("Error unliking item:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while unliking the item" });
   }
-);
+});
 
 router.get("/wishlist", verifyToken, logActivity(), async (req, res) => {
   const userId = req.user.id;
@@ -664,5 +676,24 @@ router.get("/users/:id/reviews", logActivity(), async (req, res) => {
       .json({ error: "Something went wrong while fetching the reviews" });
   }
 });
+
+router.get("/listings/auctions/all", verifyToken, async (req, res) => {
+  try {
+    const auctionListings = await prisma.listing.findMany({
+      where: {
+        isAuction: true,
+        status: "active",
+      },
+      orderBy: {
+        auctionEndTime: "asc", // Sort by auction end time to show the soonest ending auctions first
+      },
+    });
+    res.json(auctionListings);
+  } catch (error) {
+    console.error("Error fetching auction listings:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 module.exports = router;
