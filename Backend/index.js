@@ -11,6 +11,7 @@ const listingRoutes = require("./routes/listings");
 const notificationRoutes = require("./routes/notifications");
 const userRoutes = require("./routes/users");
 const auctionRoute = require("./routes/runAuction");
+const cartRoutes = require("./routes/cart");
 const schedule = require("node-schedule");
 const fetch = require("node-fetch");
 
@@ -42,6 +43,7 @@ app.use(listingRoutes);
 app.use(notificationRoutes);
 app.use(userRoutes);
 app.use(auctionRoute);
+app.use(cartRoutes);
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
