@@ -8,7 +8,7 @@ import useReview from "../CustomHooks/useReview";
 const ConfirmationPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { listingId, sellerId } = location.state || {};
+  const { listingId, sellerId, isSingleCheckout } = location.state || {};
   const {
     isReviewModalOpen,
     openReviewModal,
@@ -33,7 +33,9 @@ const ConfirmationPage = () => {
         <h2>Thank you for your purchase!</h2>
         <p>Your transaction was successful.</p>
         <button onClick={handleBackToListings}>Back to your profile</button>
-        <button onClick={handleLeaveReview}>Leave a Review</button>
+        {isSingleCheckout && (
+          <button onClick={handleLeaveReview}>Leave a Review</button>
+        )}
       </div>
       {isReviewModalOpen && (
         <CreateReviewModal
