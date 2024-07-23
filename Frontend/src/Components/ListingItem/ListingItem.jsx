@@ -15,6 +15,8 @@ const ListingItem = ({
   liked: initialLiked,
   isAuction,
   auctionEndTime,
+  handleRemoveItem,
+  cartItemId,
 }) => {
   const [liked, setLiked] = useState(initialLiked);
 
@@ -38,6 +40,12 @@ const ListingItem = ({
     } catch (error) {
       console.error("Error updating like status:", error);
     }
+  };
+
+  const handleRemoveClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleRemoveItem(cartItemId);
   };
 
   const displayPrice = isAuction ? currentBid : price;
@@ -67,6 +75,11 @@ const ListingItem = ({
             >
               <i className={`fa${liked ? "s" : "r"} fa-heart`}></i>
             </span>
+            {location.pathname === "/cart" && (
+              <button onClick={handleRemoveClick} className="removeButton">
+                Remove
+              </button>
+            )}
           </div>
         </div>
       </div>
