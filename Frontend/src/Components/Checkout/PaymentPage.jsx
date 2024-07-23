@@ -76,11 +76,6 @@ const PaymentPage = () => {
               );
             }
           } else if (cartItems) {
-            const listingIds = cartItems.map((item) => ({
-              id: item.id,
-              sellerId: item.sellerId,
-            }));
-
             const response = await fetch(`${API_KEY}/cart/complete-purchase`, {
               method: "POST",
               credentials: "include",
@@ -94,6 +89,7 @@ const PaymentPage = () => {
             });
 
             if (response.ok) {
+              const data = await response.json();
               setSuccess(true);
               navigate("/confirmation", {
                 state: { listings: data.listings, isSingleCheckout: false },
