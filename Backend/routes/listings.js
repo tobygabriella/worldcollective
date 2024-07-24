@@ -272,7 +272,25 @@ router.get("/search", verifyToken, logActivity(), async (req, res) => {
   if (!query) {
     return res.status(400).json({ message: "Query parameter is required" });
   }
-  const keywords = query.split(" ").map((keyword) => keyword.trim());
+  const keywords = query
+    .split(" ")
+    .map((keyword) => keyword.trim().toLowerCase());
+
+  // Map specific keywords to standardized search terms
+  const keywordMapping = {
+    women: "womenswear",
+    womenswear: "womenswear",
+    womenwear: "womenswear",
+    womens: "womenswear",
+    mens: "menswear",
+    menwear: "mesnwear",
+    men: "menswear",
+    menswear: "menswear",
+  };
+
+  const mappedKeywords = keywords.map(
+    (keyword) => keywordMapping[keyword] || keyword
+  );
   const filters = buildFilters({}, req.query);
   try {
     // Perform a search for listings
@@ -280,7 +298,7 @@ router.get("/search", verifyToken, logActivity(), async (req, res) => {
       where: {
         AND: [
           // Ensure that each keyword must match at least one of the fields
-          ...keywords.map((keyword) => ({
+          ...mappedKeywords.map((keyword) => ({
             OR: [
               {
                 title: {
@@ -315,6 +333,27 @@ router.get("/search", verifyToken, logActivity(), async (req, res) => {
             ],
           })),
           filters,
+          // Specific filter for women's or men's wear
+          {
+            NOT: {
+              OR: [
+                // Exclude men's listings if query is for women's wear
+                mappedKeywords.includes("womenswear") && {
+                  category: {
+                    equals: "menswear",
+                    mode: "insensitive",
+                  },
+                },
+                // Exclude women's listings if query is for men's wear
+                mappedKeywords.includes("menswear") && {
+                  category: {
+                    equals: "womenswear",
+                    mode: "insensitive",
+                  },
+                },
+              ].filter(Boolean), // filter out false conditions
+            },
+          },
         ],
       },
     });
@@ -912,5 +951,39 @@ router.post(
     }
   }
 );
+
+router.get("/search/suggestions", async (req, res) => {
+  const { query } = req.query;
+
+  if (!query) {
+    return res.status(400).json({ message: "Query parameter is required" });
+  }
+
+  try {
+    const suggestions = await prisma.listing.findMany({
+      where: {
+        OR: [
+          { title: { contains: query, mode: "insensitive" } },
+          { description: { contains: query, mode: "insensitive" } },
+          { category: { contains: query, mode: "insensitive" } },
+          { subcategory: { contains: query, mode: "insensitive" } },
+          { brand: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      select: {
+        title: true,
+        id: true,
+      },
+      take: 10, // Limit to 10 suggestions
+    });
+
+    res.status(200).json(suggestions);
+  } catch (error) {
+    console.error("Error fetching suggestions:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong while fetching suggestions" });
+  }
+});
 
 module.exports = router;
