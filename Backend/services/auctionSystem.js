@@ -10,81 +10,133 @@ class AuctionSystem {
   }
 
   calculateBidScore(bid) {
-    const maxBid = Math.max(
-      ...this.bids.filter((b) => b.itemId === bid.itemId).map((b) => b.amount)
-    );
+    const itemBids = this.bids.filter((b) => b.itemId === bid.itemId);
+    const maxBid = Math.max(...itemBids.map((b) => b.amount));
     const normalizedBid = maxBid > 0 ? bid.amount / maxBid : 0;
     const userBidsForTheDay = this.bids.filter(
       (b) => b.bidder.id === bid.bidder.id
     ).length;
     const normalizedBidsPerDay = Math.min(userBidsForTheDay / 10, 1);
-    const normalizedTime = (Date.now() / 1000 - bid.timestamp) / 86400;
+    const minTimestamp = Math.min(...this.bids.map((b) => b.timestamp));
+    const maxTimestamp = Math.max(...this.bids.map((b) => b.timestamp));
+    const normalizedTime =
+      (bid.timestamp - minTimestamp) / (maxTimestamp - minTimestamp || 1);
 
-    const score =
-      0.3 * normalizedBid +
-      0.2 * (bid.bidder.pastPurchases / 10) +
+    return (
+      0.5 * normalizedBid +
+      0.2 * Math.min(bid.bidder.pastPurchases / 10, 1) +
       0.3 * (bid.bidder.rating / 5) +
-      0.1 * (1 - normalizedTime) +
-      0.1 * (1 - normalizedBidsPerDay);
-    return score;
+      0.0 * (1 - normalizedTime) +
+      0.0 * (1 - normalizedBidsPerDay)
+    );
   }
 
   assignItems() {
     const itemBids = new Map(
       [...this.items.keys()].map((itemId) => [itemId, []])
     );
-    for (const bid of this.bids) {
+
+    const highestScoringBids = this.bids.reduce((acc, bid) => {
+      const bidScore = this.calculateBidScore(bid);
+      const existingBidIndex = acc.findIndex(
+        (b) => b.bidder.id === bid.bidder.id && b.itemId === bid.itemId
+      );
+      if (
+        existingBidIndex === -1 ||
+        this.calculateBidScore(acc[existingBidIndex]) < bidScore
+      ) {
+        if (existingBidIndex !== -1) {
+          acc.splice(existingBidIndex, 1);
+        }
+        acc.push(bid);
+      }
+      return acc;
+    }, []);
+
+    for (const bid of highestScoringBids) {
       itemBids.get(bid.itemId).push(bid);
     }
 
     const assignments = new Map();
     const assignedBidders = new Set();
-    const assignedItems = new Set();
+    let unassignedItems = new Set(this.items.keys());
+
+    const pq = new PriorityQueue(
+      (a, b) => this.calculateBidScore(a) > this.calculateBidScore(b)
+    );
 
     // First pass: Assign items with only one bid
     for (const [itemId, bids] of itemBids) {
-      if (bids.length === 1 && bids[0].amount >= this.items.get(itemId)) {
-        assignments.set(itemId, bids[0]);
-        assignedBidders.add(bids[0].bidder.id);
-        assignedItems.add(itemId);
+      if (bids.length === 1) {
+        const winningBid = bids[0];
+        assignments.set(itemId, winningBid);
+        assignedBidders.add(winningBid.bidder.id);
+        unassignedItems.delete(itemId);
       }
     }
 
-    // Second pass: Assign remaining items
-    for (const [itemId, bids] of itemBids) {
-      if (assignments.has(itemId)) continue;
+    // Helper function to find unique bidders for an item
+    const findUniqueBidders = (itemId) => {
+      return itemBids
+        .get(itemId)
+        .filter(
+          (bid) =>
+            !assignedBidders.has(bid.bidder.id) &&
+            [...itemBids.entries()].every(
+              ([otherItemId, otherBids]) =>
+                otherItemId === itemId ||
+                !otherBids.some(
+                  (otherBid) => otherBid.bidder.id === bid.bidder.id
+                )
+            )
+        );
+    };
 
-      const eligibleBids = bids.filter(
-        (bid) =>
-          !assignedBidders.has(bid.bidder.id) &&
-          bid.amount >= this.items.get(itemId)
-      );
+    // Second pass: Assign items to unique bidders
+    let changed;
+    do {
+      changed = false;
+      for (const itemId of unassignedItems) {
+        const uniqueBidders = findUniqueBidders(itemId);
 
-      if (eligibleBids.length === 0) continue;
+        if (uniqueBidders.length === 1) {
+          const winningBid = uniqueBidders[0];
+          assignments.set(itemId, winningBid);
+          assignedBidders.add(winningBid.bidder.id);
+          unassignedItems.delete(itemId);
+          changed = true;
+        } else if (uniqueBidders.length > 1) {
+          pq.clear();
+          for (const bid of uniqueBidders) {
+            pq.push(bid);
+          }
+          const winningBid = pq.pop();
+          assignments.set(itemId, winningBid);
+          assignedBidders.add(winningBid.bidder.id);
+          unassignedItems.delete(itemId);
+          changed = true;
+        }
+      }
+    } while (changed);
 
-      const uniqueBidders = eligibleBids.filter(
-        (bid) =>
-          !this.bids.some(
-            (otherBid) =>
-              otherBid.bidder.id === bid.bidder.id &&
-              otherBid.itemId !== itemId &&
-              !assignedItems.has(otherBid.itemId)
-          )
-      );
+    // Third pass: Assign remaining items to highest scoring eligible bidder
+    for (const itemId of unassignedItems) {
+      pq.clear();
+      const eligibleBids = itemBids
+        .get(itemId)
+        .filter((bid) => !assignedBidders.has(bid.bidder.id));
 
-      let winningBid;
-      if (uniqueBidders.length === 1) {
-        winningBid = uniqueBidders[0];
-      } else if (uniqueBidders.length > 1) {
-        winningBid = this.getHighestScoringBid(uniqueBidders);
-      } else {
-        winningBid = this.getHighestScoringBid(eligibleBids);
+      for (const bid of eligibleBids) {
+        pq.push(bid);
       }
 
-      assignments.set(itemId, winningBid);
-      assignedBidders.add(winningBid.bidder.id);
-      assignedItems.add(itemId);
+      if (!pq.isEmpty()) {
+        const winningBid = pq.pop();
+        assignments.set(itemId, winningBid);
+        assignedBidders.add(winningBid.bidder.id);
+      }
     }
+
     this.assignments = assignments;
     return assignments;
   }
@@ -116,46 +168,52 @@ class AuctionSystem {
   }
 
   async saveAssignments(assignments) {
+    const promises = [];
     for (const [itemId, winningBid] of assignments) {
       // Confirm the payment intent for the winning bid
-      try {
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount: winningBid.amount * 100,
-          currency: "usd",
-          customer: winningBid.bidder.stripeCustomerId,
-          payment_method: winningBid.paymentMethodId,
-          use_stripe_sdk: true,
-          off_session: true,
-          confirm: true,
-          payment_method_types: ["card"],
-        });
+      promises.push(
+        (async () => {
+          try {
+            const paymentIntent = await stripe.paymentIntents.create({
+              amount: winningBid.amount * 100,
+              currency: "usd",
+              customer: winningBid.bidder.stripeCustomerId,
+              payment_method: winningBid.paymentMethodId,
+              use_stripe_sdk: true,
+              off_session: true,
+              confirm: true,
+              payment_method_types: ["card"],
+            });
 
-        if (paymentIntent.status === "succeeded") {
-          await this.prisma.listing.update({
-            where: { id: itemId },
-            data: {
-              status: "sold",
-              currentBid: winningBid.amount,
-            },
-          });
+            if (paymentIntent.status === "succeeded") {
+              await this.prisma.listing.update({
+                where: { id: itemId },
+                data: {
+                  status: "sold",
+                  currentBid: winningBid.amount,
+                },
+              });
 
-          await this.prisma.transaction.create({
-            data: {
-              listingId: itemId,
-              buyerId: winningBid.bidder.id,
-              paymentIntentId: paymentIntent.id,
-            },
-          });
-        } else {
-          console.error(`Payment for auction ${itemId} did not succeed.`);
-        }
-      } catch (error) {
-        console.error(
-          `Error confirming payment intent for auction ${itemId}:`,
-          error
-        );
-      }
+              await this.prisma.transaction.create({
+                data: {
+                  listingId: itemId,
+                  buyerId: winningBid.bidder.id,
+                  paymentIntentId: paymentIntent.id,
+                },
+              });
+            } else {
+              console.error(`Payment for auction ${itemId} did not succeed.`);
+            }
+          } catch (error) {
+            console.error(
+              `Error confirming payment intent for auction ${itemId}:`,
+              error
+            );
+          }
+        })()
+      );
     }
+    await Promise.all(promises);
   }
 
   async processEndingAuctions() {
@@ -184,10 +242,9 @@ class AuctionSystem {
     this.items.clear();
     this.bids = [];
 
-    for (const auction of endingAuctions) {
-      this.items.set(auction.id, parseFloat(auction.initialBid));
-      for (const bid of auction.bids) {
-        const user = await this.prisma.user.findUnique({
+    const userPromises = endingAuctions.flatMap((auction) =>
+      auction.bids.map((bid) =>
+        this.prisma.user.findUnique({
           where: { id: bid.user.id },
           select: {
             id: true,
@@ -197,7 +254,18 @@ class AuctionSystem {
               select: { transactions: true },
             },
           },
-        });
+        })
+      )
+    );
+
+    const users = await Promise.all(userPromises);
+
+    const userMap = new Map(users.map((user) => [user.id, user]));
+
+    for (const auction of endingAuctions) {
+      this.items.set(auction.id, parseFloat(auction.initialBid));
+      for (const bid of auction.bids) {
+        const user = userMap.get(bid.user.id);
         this.bids.push(
           new Bid(
             new Bidder(
@@ -221,14 +289,16 @@ class AuctionSystem {
     // Save assignments and update unsold auctions
     await this.saveAssignments(assignments);
 
-    for (const auction of endingAuctions) {
-      if (!assignments.has(auction.id)) {
-        await this.prisma.listing.update({
+    const unsoldUpdates = endingAuctions
+      .filter((auction) => !assignments.has(auction.id))
+      .map((auction) =>
+        this.prisma.listing.update({
           where: { id: auction.id },
           data: { status: "unsold" },
-        });
-      }
-    }
+        })
+      );
+
+    await Promise.all(unsoldUpdates);
     return endingAuctions.length;
   }
 }
@@ -249,6 +319,90 @@ class Bid {
     this.amount = amount;
     this.timestamp = timestamp;
     this.paymentMethodId = paymentMethodId;
+  }
+}
+
+class PriorityQueue {
+  constructor(comparator = (a, b) => a > b) {
+    this.heap = [];
+    this.comparator = comparator;
+  }
+
+  push(value) {
+    this.heap.push(value);
+    this._siftUp();
+    return this.size();
+  }
+
+  pop() {
+    if (this.size() > 1) {
+      this._swap(0, this.size() - 1);
+    }
+    const poppedValue = this.heap.pop();
+    this._siftDown();
+    return poppedValue;
+  }
+
+  peek() {
+    return this.heap[0];
+  }
+
+  size() {
+    return this.heap.length;
+  }
+
+  isEmpty() {
+    return this.size() === 0;
+  }
+
+  clear() {
+    this.heap = [];
+  }
+
+  _parent(index) {
+    return Math.floor((index - 1) / 2);
+  }
+
+  _leftChild(index) {
+    return 2 * index + 1;
+  }
+
+  _rightChild(index) {
+    return 2 * index + 2;
+  }
+
+  _swap(i, j) {
+    [this.heap[i], this.heap[j]] = [this.heap[j], this.heap[i]];
+  }
+
+  _compare(i, j) {
+    return this.comparator(this.heap[i], this.heap[j]);
+  }
+
+  _siftUp() {
+    let nodeIndex = this.size() - 1;
+    while (nodeIndex > 0 && this._compare(nodeIndex, this._parent(nodeIndex))) {
+      this._swap(nodeIndex, this._parent(nodeIndex));
+      nodeIndex = this._parent(nodeIndex);
+    }
+  }
+
+  _siftDown() {
+    let nodeIndex = 0;
+    while (
+      (this._leftChild(nodeIndex) < this.size() &&
+        this._compare(this._leftChild(nodeIndex), nodeIndex)) ||
+      (this._rightChild(nodeIndex) < this.size() &&
+        this._compare(this._rightChild(nodeIndex), nodeIndex))
+    ) {
+      const maxChildIndex =
+        this._rightChild(nodeIndex) < this.size() &&
+        this._compare(this._rightChild(nodeIndex), this._leftChild(nodeIndex))
+          ? this._rightChild(nodeIndex)
+          : this._leftChild(nodeIndex);
+      this._swap(nodeIndex, maxChildIndex);
+      nodeIndex = maxChildIndex;
+    }
   }
 }
 
