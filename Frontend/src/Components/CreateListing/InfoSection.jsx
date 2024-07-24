@@ -12,6 +12,12 @@ import {
 const InfoSection = ({ formInput, setFormInput }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (
+      (name === "price" || name === "initialBid") &&
+      (isNaN(value) || value < 0 || !Number.isInteger(Number(value)))
+    ) {
+      return;
+    }
     setFormInput((prev) => ({
       ...prev,
       [name]: value,
@@ -29,6 +35,7 @@ const InfoSection = ({ formInput, setFormInput }) => {
           name="category"
           value={formInput.category}
           onChange={handleChange}
+          required
         >
           <option value="" disabled>
             Select a category
@@ -48,6 +55,7 @@ const InfoSection = ({ formInput, setFormInput }) => {
             name="subcategory"
             value={formInput.subcategory}
             onChange={handleChange}
+            required
           >
             <option value="" disabled>
               Select a subcategory
@@ -63,7 +71,12 @@ const InfoSection = ({ formInput, setFormInput }) => {
 
       <label>
         Brand
-        <select name="brand" value={formInput.brand} onChange={handleChange}>
+        <select
+          name="brand"
+          value={formInput.brand}
+          onChange={handleChange}
+          required
+        >
           <option value="" disabled>
             Select a brand
           </option>
@@ -81,6 +94,7 @@ const InfoSection = ({ formInput, setFormInput }) => {
           name="condition"
           value={formInput.condition}
           onChange={handleChange}
+          required
         >
           <option value="" disabled>
             Select a condition

@@ -31,6 +31,7 @@ const PhotoSection = ({ photos, handlePhotoUpload, handlePhotoDelete }) => {
                     accept="image/jpeg, image/png"
                     onChange={handlePhotoUpload}
                     className="photoInput"
+                    required={photos.length === 0}
                   />
                   <div className="photoPlaceholder">
                     <i className="fas fa-camera"></i>
@@ -41,7 +42,6 @@ const PhotoSection = ({ photos, handlePhotoUpload, handlePhotoDelete }) => {
             </div>
           ))}
       </div>
-      Add photos from a phone
     </div>
   );
 };
