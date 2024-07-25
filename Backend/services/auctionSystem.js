@@ -22,13 +22,15 @@ class AuctionSystem {
     const normalizedTime =
       (bid.timestamp - minTimestamp) / (maxTimestamp - minTimestamp || 1);
 
-    return (
+    const score =
       0.5 * normalizedBid +
       0.2 * Math.min(bid.bidder.pastPurchases / 10, 1) +
       0.3 * (bid.bidder.rating / 5) +
       0.0 * (1 - normalizedTime) +
-      0.0 * (1 - normalizedBidsPerDay)
-    );
+      0.0 * (1 - normalizedBidsPerDay);
+
+    // Round to 4 decimal places
+    return Math.round(score * 10000) / 10000;
   }
 
   assignItems() {
@@ -36,7 +38,7 @@ class AuctionSystem {
       [...this.items.keys()].map((itemId) => [itemId, []])
     );
 
-    const highestScoringBids = this.bids.reduce((acc, bid) => {
+    const usersHighestScoringBidsPerItem = this.bids.reduce((acc, bid) => {
       const bidScore = this.calculateBidScore(bid);
       const existingBidIndex = acc.findIndex(
         (b) => b.bidder.id === bid.bidder.id && b.itemId === bid.itemId
@@ -53,7 +55,7 @@ class AuctionSystem {
       return acc;
     }, []);
 
-    for (const bid of highestScoringBids) {
+    for (const bid of usersHighestScoringBidsPerItem) {
       itemBids.get(bid.itemId).push(bid);
     }
 
@@ -61,9 +63,15 @@ class AuctionSystem {
     const assignedBidders = new Set();
     let unassignedItems = new Set(this.items.keys());
 
-    const pq = new PriorityQueue(
-      (a, b) => this.calculateBidScore(a) > this.calculateBidScore(b)
-    );
+    const pq = new PriorityQueue((a, b) => {
+      const scoreA = this.calculateBidScore(a);
+      const scoreB = this.calculateBidScore(b);
+
+      if (scoreA !== scoreB) {
+        return scoreA > scoreB;
+      }
+      return this.compareBids(a, b) > 0;
+    });
 
     // First pass: Assign items with only one bid
     for (const [itemId, bids] of itemBids) {
@@ -144,27 +152,17 @@ class AuctionSystem {
   getAssignments() {
     return this.assignments;
   }
-
-  getHighestScoringBid(bids) {
-    return bids.reduce((max, bid) => {
-      const scoreA = this.calculateBidScore(max);
-      const scoreB = this.calculateBidScore(bid);
-
-      if (scoreB !== scoreA) {
-        return scoreB > scoreA ? bid : max;
-      }
-      // Tie-breaking rules
-      if (bid.amount !== max.amount) {
-        return bid.amount > max.amount ? bid : max;
-      }
-      if (bid.bidder.rating !== max.bidder.rating) {
-        return bid.bidder.rating > max.bidder.rating ? bid : max;
-      }
-      if (bid.bidder.pastPurchases !== max.bidder.pastPurchases) {
-        return bid.bidder.pastPurchases > max.bidder.pastPurchases ? bid : max;
-      }
-      return bid.timestamp < max.timestamp ? bid : max;
-    });
+  compareBids(a, b) {
+    if (a.amount !== b.amount) {
+      return a.amount - b.amount;
+    }
+    if (a.bidder.rating !== b.bidder.rating) {
+      return a.bidder.rating - b.bidder.rating;
+    }
+    if (a.bidder.pastPurchases !== b.bidder.pastPurchases) {
+      return a.bidder.pastPurchases - b.bidder.pastPurchases;
+    }
+    return b.timestamp - a.timestamp;
   }
 
   async saveAssignments(assignments) {
