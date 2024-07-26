@@ -10,7 +10,7 @@ const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const Home = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated} = useAuth();
 
   const [auctionListings, setAuctionListings] = useState([]);
 
