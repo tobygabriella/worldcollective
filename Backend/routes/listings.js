@@ -8,6 +8,7 @@ const { buildFilters } = require("../utils/buildFilters.js");
 const { sendNotification } = require("../services/notificationService");
 const NotificationType = require("../Enums/NotificationType.js");
 const logActivity = require("../middlewares/logActivity");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -40,7 +41,9 @@ router.post(
     } = req.body;
 
     const price =
-      isAuction === "true" ? parseFloat(initialBid) : parseFloat(req.body.price);
+      isAuction === "true"
+        ? parseFloat(initialBid)
+        : parseFloat(req.body.price);
 
     if (isNaN(price)) {
       return res
@@ -106,11 +109,20 @@ router.get("/listings/:id", logActivity(), async (req, res) => {
       where: { id: parseInt(id) },
       include: {
         seller: true,
+        bids: {
+          orderBy: {
+            amount: "desc",
+          },
+        },
       },
     });
     if (!listing) {
       return res.status(404).json({ message: "Listing not found" });
     }
+
+    const highestBid =
+      listing.bids.length > 0 ? listing.bids[0].amount : listing.initialBid;
+    listing.currentBid = highestBid;
 
     res.status(200).json(listing);
   } catch (error) {
@@ -687,7 +699,16 @@ router.get("/listings/auctions/all", verifyToken, async (req, res) => {
       orderBy: {
         auctionEndTime: "asc", // Sort by auction end time to show the soonest ending auctions first
       },
+      include: {
+        seller: true,
+        bids: {
+          orderBy: {
+            amount: "desc",
+          },
+        },
+      },
     });
+
     res.json(auctionListings);
   } catch (error) {
     console.error("Error fetching auction listings:", error);
@@ -695,5 +716,97 @@ router.get("/listings/auctions/all", verifyToken, async (req, res) => {
   }
 });
 
+//fetch bids for a particular listing
+router.get(
+  "/listings/:id/bids",
+  logActivity(),
+  verifyToken,
+  async (req, res) => {
+    const { id: listingId } = req.params;
+
+    try {
+      const bids = await prisma.bid.findMany({
+        where: { listingId: parseInt(listingId) },
+        include: {
+          user: {
+            select: { username: true },
+          },
+        },
+        orderBy: {
+          amount: "desc",
+        },
+      });
+
+      res.status(200).json(bids);
+    } catch (error) {
+      console.error("Error fetching bids:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while fetching the bids" });
+    }
+  }
+);
+
+router.post(
+  "/listings/:id/bids",
+  logActivity(),
+  verifyToken,
+  async (req, res) => {
+    const { id: listingId } = req.params;
+    const { amount } = req.body;
+    const userId = req.user.id;
+
+    if (isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ error: "Invalid bid amount" });
+    }
+
+    try {
+      // Get the current highest bid for the listing
+      const listing = await prisma.listing.findUnique({
+        where: { id: parseInt(listingId) },
+        include: { bids: true },
+      });
+
+      if (!listing) {
+        return res.status(404).json({ message: "Listing not found" });
+      }
+
+      const currentHighestBid =
+        listing.bids.length > 0
+          ? Math.max(...listing.bids.map((bid) => bid.amount))
+          : listing.initialBid;
+
+      if (parseFloat(amount) <= currentHighestBid) {
+        return res.status(400).json({
+          error: "Your bid must be higher than the current highest bid.",
+        });
+      }
+
+      // Create the new bid
+      const bid = await prisma.bid.create({
+        data: {
+          amount: parseFloat(amount),
+          listingId: parseInt(listingId),
+          userId: parseInt(userId),
+        },
+      });
+
+      // Update the listing's current bid
+      await prisma.listing.update({
+        where: { id: parseInt(listingId) },
+        data: {
+          currentBid: parseFloat(amount),
+        },
+      });
+
+      res.status(201).json(bid);
+    } catch (error) {
+      console.error("Error posting bid:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while posting the bid" });
+    }
+  }
+);
 
 module.exports = router;

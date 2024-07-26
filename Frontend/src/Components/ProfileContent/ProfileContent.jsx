@@ -8,6 +8,7 @@ import useLoading from "../CustomHooks/useLoading.jsx";
 import Loading from "../Loading/Loading.jsx";
 import "./ProfileContent.css";
 import ViewReviewModal from "../Review/ViewReviewModal.jsx";
+import renderStars from "../utils/renderStars.jsx";
 
 const ProfileContent = ({
   user,
@@ -46,17 +47,6 @@ const ProfileContent = ({
 
   const closeModal = () => {
     setIsModalOpen(false);
-  };
-
-  const renderStars = (averageRating) => {
-    return [...Array(5)].map((_, index) => (
-      <span
-        key={index}
-        className={`star ${index < Math.round(averageRating) ? "filled" : ""}`}
-      >
-        &#9733;
-      </span>
-    ));
   };
 
   if (isLoading) {
@@ -101,11 +91,7 @@ const ProfileContent = ({
           {(listing) => <ListingItem key={listing.id} {...listing} />}
         </ListingsContainer>
       </div>
-      <ViewReviewModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        userId={user.id}
-      />
+      {isModalOpen && <ViewReviewModal onClose={closeModal} userId={user.id} />}
     </div>
   );
 };

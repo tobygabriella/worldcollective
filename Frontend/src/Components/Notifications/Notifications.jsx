@@ -186,15 +186,16 @@ const Notifications = () => {
           )}
         </div>
       )}
-      <CreateReviewModal
-        isOpen={isReviewModalOpen}
-        onClose={closeReviewModal}
-        successMessage={successMessage}
-        errorMessage={errorMessage}
-        onSubmit={(review) =>
-          handleReviewSubmit(currentListingId, currentSellerId, review)
-        }
-      />
+      {isReviewModalOpen && (
+        <CreateReviewModal
+          onClose={closeReviewModal}
+          successMessage={successMessage}
+          errorMessage={errorMessage}
+          onSubmit={(review) =>
+            handleReviewSubmit(currentListingId, currentSellerId, review)
+          }
+        />
+      )}
     </div>
   );
 };
