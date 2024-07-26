@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSocket } from "./SocketContext";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 const AuthContext = createContext();
@@ -8,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const { clearNotificationState } = useSocket();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -45,6 +47,7 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         setIsAuthenticated(false);
         setUser(null);
+        clearNotificationState();
         navigate("/");
       } else {
         console.error("Logout failed");

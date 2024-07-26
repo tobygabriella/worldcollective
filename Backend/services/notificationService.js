@@ -172,7 +172,7 @@ const performGMMClustering = async (
   tolerance = 1e-4
 ) => {
   try {
-    // Step 1: Fetch user activity data for the past week (same as before)
+    // Step 1: Fetch user activity data for the past week
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     const activities = await prisma.userActivity.findMany({
@@ -191,6 +191,7 @@ const performGMMClustering = async (
 
     // Helper functions
     const normalPDF = (x, mean, variance) => {
+      if (variance === 0) return 0; // Avoid division by zero
       return (
         Math.exp((-0.5 * Math.pow(x - mean, 2)) / variance) /
         Math.sqrt(2 * Math.PI * variance)
@@ -199,12 +200,11 @@ const performGMMClustering = async (
 
     const initializeParameters = () => {
       const weights = Array(k).fill(1 / k);
-      const means = Array(k)
-        .fill()
-        .map(() => Math.random() * 2 * Math.PI);
-      const variances = Array(k)
-        .fill()
-        .map(() => Math.random());
+      const means = Array.from(
+        { length: k },
+        (_, i) => (i + 1) * ((2 * Math.PI) / (k + 1))
+      );
+      const variances = Array(k).fill(1);
       return { weights, means, variances };
     };
 
@@ -221,32 +221,38 @@ const performGMMClustering = async (
           (mean, j) => weights[j] * normalPDF(hour, mean, variances[j])
         );
         const sum = densities.reduce((a, b) => a + b, 0);
+        if (sum === 0) {
+          return densities.map(() => 1 / k); // Equal distribution if sum is zero
+        }
         return densities.map((density) => density / sum);
       });
-
       // M-step: Update parameters
       const Nk = responsibilities[0].map((_, k) =>
         responsibilities.reduce((sum, r) => sum + r[k], 0)
       );
 
       weights = Nk.map((nk) => nk / hours.length);
-
-      means = means.map((_, k) => {
+      means = means.map((oldMean, k) => {
         const sum = hours.reduce(
           (sum, hour, i) => sum + responsibilities[i][k] * hour,
           0
         );
-        return sum / Nk[k];
+        return Nk[k] > 0 ? sum / Nk[k] : oldMean; // Keep old mean if Nk is zero
       });
-
-      variances = variances.map((_, k) => {
+      variances = variances.map((oldVariance, k) => {
         const sum = hours.reduce(
           (sum, hour, i) =>
             sum + responsibilities[i][k] * Math.pow(hour - means[k], 2),
           0
         );
-        return sum / Nk[k];
+        return Nk[k] > 0 ? Math.max(sum / Nk[k], 1e-6) : oldVariance; // Keep old variance if Nk is zero, ensure minimum variance
       });
+
+      // Check for NaN values
+      if (weights.some(isNaN) || means.some(isNaN) || variances.some(isNaN)) {
+        ({ weights, means, variances } = initializeParameters());
+        continue;
+      }
 
       // Compute log-likelihood
       const newLogLikelihood = hours.reduce((sum, hour) => {
@@ -266,9 +272,14 @@ const performGMMClustering = async (
     }
 
     // Find the component with the highest weight
-    const bestComponent = weights.indexOf(Math.max(...weights));
+    const bestComponent = weights.findIndex((w) => w === Math.max(...weights));
     const bestHour =
-      Math.round((means[bestComponent] / (2 * Math.PI)) * 24) % 24;
+      bestComponent !== -1
+        ? Math.round((means[bestComponent] / (2 * Math.PI)) * 24) % 24
+        : null;
+    if (bestHour === null) {
+      return null;
+    }
 
     // Update the database
     await prisma.userActivePeriods.upsert({
