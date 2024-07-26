@@ -12,6 +12,15 @@ class AuctionSystem {
     if (!this.items.has(itemId)) {
       throw new Error(`Item ${itemId} does not exist`);
     }
+    if (amount < 0) {
+      throw new Error(`Bid amount cannot be negative`);
+    }
+    const reservePrice = this.items.get(itemId);
+    if (amount < reservePrice) {
+      throw new Error(
+        `Bid amount cannot be less than the reserve price of ${reservePrice}`
+      );
+    }
     this.bids.push(new Bid(bidder, itemId, amount, timestamp));
   }
 
@@ -19,21 +28,23 @@ class AuctionSystem {
     const itemBids = this.bids.filter((b) => b.itemId === bid.itemId);
     const maxBid = Math.max(...itemBids.map((b) => b.amount));
     const normalizedBid = maxBid > 0 ? bid.amount / maxBid : 0;
-    const userBidsForTheDay = this.bids.filter(
+
+    const userBidsForTheItem = itemBids.filter(
       (b) => b.bidder.id === bid.bidder.id
     ).length;
-    const normalizedBidsPerDay = Math.min(userBidsForTheDay / 10, 1);
-    const minTimestamp = Math.min(...this.bids.map((b) => b.timestamp));
-    const maxTimestamp = Math.max(...this.bids.map((b) => b.timestamp));
+    const normalizedBidsForTheItem = Math.min(userBidsForTheItem / 5, 1); // Encourages more bids on the same item
+    const currentTime = Date.now() / 1000;
+    const oldestBidTime = Math.min(...itemBids.map((b) => b.timestamp));
+    const timeRange = currentTime - oldestBidTime;
     const normalizedTime =
-      (bid.timestamp - minTimestamp) / (maxTimestamp - minTimestamp || 1);
+      timeRange > 0 ? (currentTime - bid.timestamp) / timeRange : 0;
 
     const score =
-      0.5 * normalizedBid +
-      0.2 * Math.min(bid.bidder.pastPurchases / 10, 1) +
-      0.3 * (bid.bidder.rating / 5) +
-      0.0 * (1 - normalizedTime) +
-      0.0 * (1 - normalizedBidsPerDay);
+      0.3 * normalizedBid +
+      0.2 * Math.min(bid.bidder.pastPurchases / 10) +
+      0.2 * (bid.bidder.rating / 5) +
+      0.1 * (1 - normalizedTime) +
+      0.2 * normalizedBidsForTheItem;
 
     // Round to 4 decimal places
     return Math.round(score * 10000) / 10000;
@@ -279,35 +290,4 @@ class PriorityQueue {
   }
 }
 
-function runComplexAuctionSimulation() {
-  const auction = new AuctionSystem();
-
-  // Add two items to the auction
-  auction.addItem("item1", 100); // Normal reserve
-
-  // Create bidders with manipulated profiles
-  const bidderA = new Bidder("A", 5, 4.5); // Moderate purchases, high rating
-  const bidderB = new Bidder("B", 10, 3.3236); // High purchases, moderate rating
-
-  // Place bids and log scores
-  function placeBidAndLogScore(bidder, itemId, amount, timestamp) {
-    auction.placeBid(bidder, itemId, amount, timestamp);
-  }
-
-  // Bidding scenarios
-  // Item 1: Two bids with identical scores
-  placeBidAndLogScore(bidderA, "item1", 170, 1000);
-  placeBidAndLogScore(bidderB, "item1", 160, 1100);
-
-  // Assign items to winners and resolve any ties
-  const assignments = auction.assignItems();
-
-  const unassignedItems = new Set(auction.items.keys());
-  for (const [itemId] of assignments) {
-    unassignedItems.delete(itemId);
-  }
-}
-
-// Run the simulation
-runComplexAuctionSimulation();
 module.exports = { AuctionSystem, Bidder, Bid };
