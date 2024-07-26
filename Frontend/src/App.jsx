@@ -5,6 +5,7 @@ import { SocketProvider } from "./Components/Contexts/SocketContext.jsx";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import Loading from "./Components/Loading/Loading";
+import PrivateRoute from "/Users/tobygabriella/Desktop/MetaU Projects/world-collective/Frontend/src/Components/PrivateRoute.jsx";
 import "./App.css";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -51,44 +52,78 @@ const ShoppingCart = lazy(() =>
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <SocketProvider>
+      <SocketProvider>
+        <AuthProvider>
           <Suspense fallback={<Loading />}>
             <Routes>
               <Route path="/login" element={<LogIn />} />
               <Route path="/register" element={<SignUp />} />
               <Route path="/" element={<Home />} />
-              <Route path="/userProfile" element={<UserProfile />} />
-              <Route path="/createListing" element={<CreateListing />} />
-              <Route path="/listings/:id" element={<ListingDetailContainer />}>
-                <Route index element={<ListingDetails />} />
+              <Route
+                path="/userProfile"
+                element={<PrivateRoute element={UserProfile} />}
+              />
+              <Route
+                path="/createListing"
+                element={<PrivateRoute element={CreateListing} />}
+              />
+              <Route
+                path="/listings/:id"
+                element={<PrivateRoute element={ListingDetailContainer} />}
+              >
+                <Route
+                  index
+                  element={<PrivateRoute element={ListingDetails} />}
+                />
               </Route>
               <Route
                 path="/checkout"
-                element={
-                  <Elements stripe={stripePromise}>
-                    <PaymentPage />
-                  </Elements>
+                eelement={
+                  <PrivateRoute
+                    element={() => (
+                      <Elements stripe={stripePromise}>
+                        <PaymentPage />
+                      </Elements>
+                    )}
+                  />
                 }
               />
               <Route
                 path="/listings/:filterType/:filterValue"
-                element={<FilteredListing />}
+                element={<PrivateRoute element={FilteredListing} />}
               />
-              <Route path="/search" element={<SearchResults />} />
-              <Route path="/users/:username" element={<OtherUsersProfile />} />
-              <Route path="/wishlist" element={<Wishlist />} />
-              <Route path="/confirmation" element={<ConfirmationPage />} />
-              <Route path="/notifications" element={<Notifications />} />
+              <Route
+                path="/search"
+                element={<PrivateRoute element={SearchResults} />}
+              />
+              <Route
+                path="/users/:username"
+                element={<PrivateRoute element={OtherUsersProfile} />}
+              />
+              <Route
+                path="/wishlist"
+                element={<PrivateRoute element={Wishlist} />}
+              />
+              <Route
+                path="/confirmation"
+                element={<PrivateRoute element={ConfirmationPage} />}
+              />
+              <Route
+                path="/notifications"
+                element={<PrivateRoute element={Notifications} />}
+              />
               <Route
                 path="/listings/auctions"
-                element={<AuctionListingPage />}
+                element={<PrivateRoute element={AuctionListingPage} />}
               />
-              <Route path="/cart" element={<ShoppingCart />} />
+              <Route
+                path="/cart"
+                element={<PrivateRoute element={ShoppingCart} />}
+              />
             </Routes>
           </Suspense>
-        </SocketProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </SocketProvider>
     </Router>
   );
 }

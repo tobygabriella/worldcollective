@@ -9,6 +9,7 @@ import Loading from "../Loading/Loading.jsx";
 import "./ProfileContent.css";
 import ViewReviewModal from "../Review/ViewReviewModal.jsx";
 import renderStars from "../utils/renderStars.jsx";
+import FollowingModal from "../FollowingModal/FollowingModal";
 
 const ProfileContent = ({
   user,
@@ -21,6 +22,7 @@ const ProfileContent = ({
 }) => {
   const [listings, setListings] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const { isLoading, startLoading, stopLoading } = useLoading();
   const initials = getInitials(user.firstname, user.lastname);
 
@@ -28,8 +30,7 @@ const ProfileContent = ({
     const fetchListings = async () => {
       startLoading();
       try {
-        const listingsWithLiked =
-          await fetchListingsWithLiked(user.listings);
+        const listingsWithLiked = await fetchListingsWithLiked(user.listings);
         setListings(listingsWithLiked);
       } catch (error) {
         console.error("Error fetching listings:", error);
@@ -47,6 +48,14 @@ const ProfileContent = ({
 
   const closeModal = () => {
     setIsModalOpen(false);
+  };
+
+  const openFollowModal = () => {
+    setIsFollowModalOpen(true);
+  };
+
+  const closeFollowModal = () => {
+    setIsFollowModalOpen(false);
   };
 
   if (isLoading) {
@@ -67,8 +76,8 @@ const ProfileContent = ({
             {renderStars(user.averageRating)}
             <span>({user.reviewCount})</span>
           </div>
-          <p>{followersCount} Followers</p>
-          <p>{followingCount} Following</p>
+          <p onClick={openFollowModal}>{followersCount} Followers</p>
+          <p onClick={openFollowModal}>{followingCount} Following</p>
           {onFollow &&
             onUnfollow &&
             (isFollowing ? (
@@ -92,6 +101,9 @@ const ProfileContent = ({
         </ListingsContainer>
       </div>
       {isModalOpen && <ViewReviewModal onClose={closeModal} userId={user.id} />}
+      {isFollowModalOpen && (
+        <FollowingModal userId={user.id} onClose={closeFollowModal} />
+      )}
     </div>
   );
 };
