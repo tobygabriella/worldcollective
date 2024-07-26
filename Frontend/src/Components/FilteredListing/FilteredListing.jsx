@@ -3,7 +3,7 @@ import { useParams, useLocation } from "react-router-dom";
 import ListingItem from "../ListingItem/ListingItem";
 import ListingsContainer from "../ListingsContainer/ListingsContainer";
 import { getConditionName, getCategoryName } from "../utils/ListingInfoUtil.js";
-import { fetchListingsWithStatusAndLiked } from "../utils/likeStatusUtil.js";
+import { fetchListingsWithLiked } from "../utils/likeStatusUtil.js";
 import useLoading from "../CustomHooks/useLoading.jsx";
 import Loading from "../Loading/Loading.jsx";
 
@@ -39,9 +39,9 @@ const FilteredListings = () => {
           }
         );
         const data = await response.json();
-        const listingsWithStatusAndLiked =
-          await fetchListingsWithStatusAndLiked(data);
-        setListings(listingsWithStatusAndLiked);
+        const listingsWithLiked =
+          await fetchListingsWithLiked(data);
+        setListings(listingsWithLiked);
       } catch (error) {
         console.error("Error fetching listings:", error);
       } finally {

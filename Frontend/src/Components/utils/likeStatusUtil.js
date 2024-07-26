@@ -1,6 +1,6 @@
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
-export const fetchListingsWithStatusAndLiked = async (listings) => {
+export const fetchListingsWithLiked = async (listings) => {
   const listingsWithStatusAndLiked = await Promise.all(
     listings.map(async (listing) => {
       const likedResponse = await fetch(

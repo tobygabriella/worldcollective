@@ -10,6 +10,15 @@ import useReview from "../CustomHooks/useReview.jsx";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
+const getIsListingNotif = (notif) => {
+  return (
+    notif.type === "LIKE" ||
+    notif.type === "PURCHASE" ||
+    notif.type === "LIKE_PURCHASE" ||
+    notif.type === "BID"
+  );
+};
+
 const Notifications = () => {
   const {
     notifications,
@@ -18,6 +27,7 @@ const Notifications = () => {
     setNotifications,
     pendingNotificationsCount,
     clearPendingCount,
+    isNotificationsLoaded,
   } = useSocket();
   const { startLoading, isLoading, stopLoading } = useLoading();
   const navigate = useNavigate();
@@ -34,9 +44,11 @@ const Notifications = () => {
   const [filterType, setFilterType] = useState("");
 
   useEffect(() => {
-    startLoading();
-    fetchNotifications(filterType).then(() => stopLoading());
-  }, [filterType]);
+    if (!isNotificationsLoaded) {
+      startLoading();
+      fetchNotifications(filterType).then(() => stopLoading());
+    }
+  }, [filterType, isNotificationsLoaded]);
 
   const handleTypeChange = (type) => {
     setFilterType(type);
@@ -68,10 +80,6 @@ const Notifications = () => {
     return <Loading />;
   }
 
-  if (isLoading) {
-    return <Loading />;
-  }
-
   const handleNotificationClick = async (notif) => {
     try {
       await fetch(`${API_KEY}/notifications/${notif.id}/interact`, {
@@ -86,15 +94,9 @@ const Notifications = () => {
       console.error("Error interacting with notification:", error);
     }
 
-    const isListingNotif =
-      notif.type === "LIKE" ||
-      notif.type === "PURCHASE" ||
-      notif.type === "LIKE_PURCHASE" ||
-      notif.type === "BID";
-
     if (notif.type === "FOLLOW") {
       navigate(`/users/${notif.usernameTarget}`);
-    } else if (isListingNotif) {
+    } else if (getIsListingNotif(notif)) {
       navigate(`/listings/${notif.listingId}`);
     } else if (notif.type === "REVIEW_REMINDER") {
       setCurrentListingId(notif.listingId);
@@ -106,36 +108,27 @@ const Notifications = () => {
   const renderNotifications = (notifications) => {
     return (
       <ul className="notificationsList">
-        {notifications.map((notif, index) => {
-          const isListingNotif =
-            notif.type === "LIKE" ||
-            notif.type === "PURCHASE" ||
-            notif.type === "LIKE_PURCHASE" ||
-            notif.type === "BID";
-          return (
-            <li
-              key={index}
-              className={`notificationItem ${notif.isRead ? "read" : "unread"}`}
-              onClick={() => handleNotificationClick(notif)}
-            >
-              <div className="notificationContent">
-                {!notif.isRead && <span className="unreadIndicator"></span>}
-                {isListingNotif && notif.listingImage && (
-                  <img
-                    src={notif.listingImage}
-                    alt="Listing"
-                    className="notificationImage"
-                  />
-                )}
-                {notif.type === "FOLLOW" && (
-                  <div className="profileCircle"></div>
-                )}
-                <p>{notif.content}</p>
-              </div>
-              <span className="notificationTime">{notif.timeAgo}</span>
-            </li>
-          );
-        })}
+        {notifications.map((notif, index) => (
+          <li
+            key={index}
+            className={`notificationItem ${notif.isRead ? "read" : "unread"}`}
+            onClick={() => handleNotificationClick(notif)}
+          >
+            <div className="notificationContent">
+              {!notif.isRead && <span className="unreadIndicator"></span>}
+              {getIsListingNotif(notif) && notif.listingImage && (
+                <img
+                  src={notif.listingImage}
+                  alt="Listing"
+                  className="notificationImage"
+                />
+              )}
+              {notif.type === "FOLLOW" && <div className="profileCircle"></div>}
+              <p>{notif.content}</p>
+            </div>
+            <span className="notificationTime">{notif.timeAgo}</span>
+          </li>
+        ))}
       </ul>
     );
   };
