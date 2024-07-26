@@ -10,6 +10,9 @@ const authRoutes = require("./routes/auth");
 const listingRoutes = require("./routes/listings");
 const notificationRoutes = require("./routes/notifications");
 const userRoutes = require("./routes/users");
+const auctionRoute = require("./routes/runAuction");
+const schedule = require("node-schedule");
+const fetch = require("node-fetch");
 
 const app = express();
 const server = http.createServer(app);
@@ -38,6 +41,7 @@ app.use(authRoutes);
 app.use(listingRoutes);
 app.use(notificationRoutes);
 app.use(userRoutes);
+app.use(auctionRoute);
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
@@ -52,11 +56,29 @@ io.on("connection", (socket) => {
     delete socket.userId;
   });
 });
-
 // Import services to run background tasks
 const {
   updateImportantNotificationTypes,
 } = require("./services/notificationService");
 setInterval(updateImportantNotificationTypes, 60 * 1000);
 
+const scheduleDailyAuctions = () => {
+  schedule.scheduleJob({ hour: 23, minute: 59 }, async () => {
+    try {
+      const response = await fetch("http://localhost:3002/run-daily-auctions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Error processing daily auctions:", error);
+    }
+  });
+};
+
+scheduleDailyAuctions();
 server.listen(port, () => {});

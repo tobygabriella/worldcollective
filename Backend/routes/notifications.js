@@ -3,13 +3,12 @@ const { PrismaClient } = require("@prisma/client");
 const verifyToken = require("../middlewares/auth");
 const { formatDistanceToNow } = require("date-fns");
 const logActivity = require("../middlewares/logActivity");
-const {clearScheduledJob}= require("../services/notificationService");
+const { clearScheduledJob } = require("../services/notificationService");
 
 const prisma = new PrismaClient();
 const router = express.Router();
-router.use(verifyToken, logActivity());
 
-router.post("/notifications", verifyToken, async (req, res) => {
+router.post("/notifications", verifyToken, logActivity(), async (req, res) => {
   const { content, userId } = req.body;
 
   try {
@@ -33,7 +32,7 @@ router.post("/notifications", verifyToken, async (req, res) => {
   }
 });
 
-router.get("/notifications", logActivity(), verifyToken, async (req, res) => {
+router.get("/notifications", verifyToken, logActivity(), async (req, res) => {
   const userId = req.user.id;
   const { type } = req.query;
 
@@ -87,9 +86,9 @@ router.get("/notifications", logActivity(), verifyToken, async (req, res) => {
     res.status(200).json(formattedNotifications);
   } catch (error) {
     console.error("Error fetching notifications:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while fetching the notifications" });
+    res.status(500).json({
+      error: "Something went wrong while fetching the notifications",
+    });
   }
 });
 
@@ -156,8 +155,8 @@ router.get("/notifications/unread-count", verifyToken, async (req, res) => {
 
 router.put(
   "/notifications/:id/interact",
-  logActivity(),
   verifyToken,
+  logActivity(),
   async (req, res) => {
     const { id } = req.params;
 

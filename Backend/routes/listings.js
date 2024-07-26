@@ -12,7 +12,6 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const prisma = new PrismaClient();
 const router = express.Router();
-router.use(verifyToken);
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
@@ -26,6 +25,7 @@ const upload = multer({ storage: storage });
 
 router.post(
   "/listings",
+  verifyToken,
   logActivity(),
   upload.array("images", 8),
   async (req, res) => {
@@ -87,7 +87,7 @@ router.post(
   }
 );
 
-router.get("/listings/user", logActivity(), verifyToken, async (req, res) => {
+router.get("/listings/user", verifyToken, logActivity(), async (req, res) => {
   const userId = req.user.id;
   try {
     const userListings = await prisma.listing.findMany({
@@ -104,7 +104,7 @@ router.get("/listings/user", logActivity(), verifyToken, async (req, res) => {
   }
 });
 
-router.get("/listings/:id", logActivity(), async (req, res) => {
+router.get("/listings/:id", verifyToken, logActivity(), async (req, res) => {
   const { id } = req.params;
   try {
     const listing = await prisma.listing.findUnique({
@@ -135,7 +135,7 @@ router.get("/listings/:id", logActivity(), async (req, res) => {
   }
 });
 
-router.delete("/listings/:id", verifyToken, async (req, res) => {
+router.delete("/listings/:id", verifyToken, verifyToken, async (req, res) => {
   const { id } = req.params;
   const sellerId = req.user.id;
 
@@ -163,7 +163,7 @@ router.delete("/listings/:id", verifyToken, async (req, res) => {
   }
 });
 
-router.get("/listings/category/:category", async (req, res) => {
+router.get("/listings/category/:category", verifyToken, async (req, res) => {
   const { category } = req.params;
   const filters = buildFilters({ category }, req.query);
   try {
@@ -181,6 +181,7 @@ router.get("/listings/category/:category", async (req, res) => {
 
 router.get(
   "/listings/subcategory/:subcategory",
+  verifyToken,
   logActivity(),
   async (req, res) => {
     const { subcategory } = req.params;
@@ -197,44 +198,55 @@ router.get(
   }
 );
 
-router.get("/listings/price/:maxPrice", logActivity(), async (req, res) => {
-  const { maxPrice } = req.params;
-  const filters = buildFilters(
-    { price: { lte: parseFloat(maxPrice) } },
-    req.query
-  );
-  try {
-    const listings = await prisma.listing.findMany({
-      where: { ...filters },
-    });
-    res.status(200).json(listings);
-  } catch (error) {
-    console.error("Error fetching listings by price:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while fetching the listings" });
+router.get(
+  "/listings/price/:maxPrice",
+  verifyToken,
+  logActivity(),
+  async (req, res) => {
+    const { maxPrice } = req.params;
+    const filters = buildFilters(
+      { price: { lte: parseFloat(maxPrice) } },
+      req.query
+    );
+    try {
+      const listings = await prisma.listing.findMany({
+        where: { ...filters },
+      });
+      res.status(200).json(listings);
+    } catch (error) {
+      console.error("Error fetching listings by price:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while fetching the listings" });
+    }
   }
-});
+);
 
-router.get("/listings/brand/:brand", logActivity(), async (req, res) => {
-  const { brand } = req.params;
-  const filters = buildFilters({ brand }, req.query);
+router.get(
+  "/listings/brand/:brand",
+  verifyToken,
+  logActivity(),
+  async (req, res) => {
+    const { brand } = req.params;
+    const filters = buildFilters({ brand }, req.query);
 
-  try {
-    const listings = await prisma.listing.findMany({
-      where: { ...filters },
-    });
-    res.status(200).json(listings);
-  } catch (error) {
-    console.error("Error fetching listings by brand:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while fetching the listings" });
+    try {
+      const listings = await prisma.listing.findMany({
+        where: { ...filters },
+      });
+      res.status(200).json(listings);
+    } catch (error) {
+      console.error("Error fetching listings by brand:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while fetching the listings" });
+    }
   }
-});
+);
 
 router.get(
   "/listings/condition/:condition",
+  verifyToken,
   logActivity(),
   async (req, res) => {
     const { condition } = req.params;
@@ -254,7 +266,7 @@ router.get(
   }
 );
 
-router.get("/search", logActivity(), async (req, res) => {
+router.get("/search", verifyToken, logActivity(), async (req, res) => {
   const { query } = req.query;
 
   if (!query) {
@@ -334,8 +346,8 @@ router.get("/search", logActivity(), async (req, res) => {
 
 router.post(
   "/listings/:id/like",
-  logActivity(),
   verifyToken,
+  logActivity(),
   async (req, res) => {
     const { id: itemId } = req.params;
     const userId = req.user.id;
@@ -446,8 +458,8 @@ router.get("/wishlist", verifyToken, logActivity(), async (req, res) => {
 
 router.get(
   "/listings/:id/like-status",
-  logActivity(),
   verifyToken,
+  logActivity(),
   async (req, res) => {
     const { id: itemId } = req.params;
     const userId = req.user.id;
@@ -472,8 +484,8 @@ router.get(
 
 router.post(
   "/create-payment-intent",
-  logActivity(),
   verifyToken,
+  logActivity(),
   async (req, res) => {
     const { amount } = req.body;
 
@@ -497,8 +509,8 @@ router.post(
 
 router.post(
   "/listings/:id/complete-purchase",
-  logActivity(),
   verifyToken,
+  logActivity(),
   async (req, res) => {
     const { id: listingId } = req.params;
     const { paymentIntentId } = req.body;
@@ -666,30 +678,35 @@ router.post(
   }
 );
 
-router.get("/users/:id/reviews", logActivity(), async (req, res) => {
-  const { id: sellerId } = req.params;
+router.get(
+  "/users/:id/reviews",
+  verifyToken,
+  logActivity(),
+  async (req, res) => {
+    const { id: sellerId } = req.params;
 
-  try {
-    const reviews = await prisma.review.findMany({
-      where: { sellerId: parseInt(sellerId) },
-      include: {
-        reviewer: {
-          select: { username: true },
+    try {
+      const reviews = await prisma.review.findMany({
+        where: { sellerId: parseInt(sellerId) },
+        include: {
+          reviewer: {
+            select: { username: true },
+          },
+          listing: {
+            select: { imageUrls: true },
+          },
         },
-        listing: {
-          select: { imageUrls: true },
-        },
-      },
-    });
+      });
 
-    res.status(200).json(reviews);
-  } catch (error) {
-    console.error("Error fetching reviews:", error);
-    res
-      .status(500)
-      .json({ error: "Something went wrong while fetching the reviews" });
+      res.status(200).json(reviews);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong while fetching the reviews" });
+    }
   }
-});
+);
 
 router.get("/listings/auctions/all", verifyToken, async (req, res) => {
   try {
@@ -721,8 +738,8 @@ router.get("/listings/auctions/all", verifyToken, async (req, res) => {
 //fetch bids for a particular listing
 router.get(
   "/listings/:id/bids",
-  logActivity(),
   verifyToken,
+  logActivity(),
   async (req, res) => {
     const { id: listingId } = req.params;
 
@@ -751,8 +768,8 @@ router.get(
 
 router.post(
   "/listings/:id/bids",
-  logActivity(),
   verifyToken,
+  logActivity(),
   async (req, res) => {
     const { id: listingId } = req.params;
     const { amount } = req.body;
@@ -846,6 +863,7 @@ router.post(
           listingImage: listing.imageUrls[0],
           usernameTarget: previousBid.user.username,
         };
+
         await sendNotification(notificationDataForPreviousBidder, io);
       }
 
