@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from "react";
 import "./ViewReviewModal.css";
+import renderStars from "../utils/renderStars.jsx";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
-const ViewReviewModal = ({ isOpen, onClose, userId }) => {
+const ViewReviewModal = ({ onClose, userId }) => {
   const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     const fetchReviews = async () => {
-      if (!isOpen) return;
       try {
-        const response = await fetch(`${API_KEY}/users/${userId}/reviews`,{
-        method: "GET",
-        credentials: "include",
-      });
+        const response = await fetch(`${API_KEY}/users/${userId}/reviews`, {
+          method: "GET",
+          credentials: "include",
+        });
         if (response.ok) {
           const data = await response.json();
           setReviews(data);
@@ -26,9 +26,7 @@ const ViewReviewModal = ({ isOpen, onClose, userId }) => {
     };
 
     fetchReviews();
-  }, [isOpen, userId]);
-
-  if (!isOpen) return null;
+  }, [userId]);
 
   return (
     <div className="reviewsModalOverlay">
@@ -47,18 +45,7 @@ const ViewReviewModal = ({ isOpen, onClose, userId }) => {
               />
               <div className="reviewText">
                 <h4>@{review.reviewer.username}</h4>
-                <div className="reviewRating">
-                  {[...Array(5)].map((_, index) => (
-                    <span
-                      key={index}
-                      className={`star ${
-                        index < review.rating ? "filled" : ""
-                      }`}
-                    >
-                      &#9733;
-                    </span>
-                  ))}
-                </div>
+                <div className="reviewRating">{renderStars(review.rating)}</div>
                 <p>{review.content}</p>
                 <p className="reviewTime">{review.timeAgo}</p>
               </div>

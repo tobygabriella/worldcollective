@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import "./CreateReviewModal.css";
+import renderStars from "../utils/renderStars";
 
 const CreateReviewModal = ({
-  isOpen,
   onClose,
   onSubmit,
   successMessage,
@@ -10,8 +10,6 @@ const CreateReviewModal = ({
 }) => {
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState("");
-
-  if (!isOpen) return null;
 
   const handleRatingClick = (index) => {
     setRating(index + 1);
@@ -31,15 +29,7 @@ const CreateReviewModal = ({
         ) : (
           <form onSubmit={handleSubmit}>
             <div className="rating">
-              {[...Array(5)].map((star, index) => (
-                <span
-                  key={index}
-                  className={`star ${index < rating ? "filled" : ""}`}
-                  onClick={() => handleRatingClick(index)}
-                >
-                  ★
-                </span>
-              ))}
+              {renderStars(rating, handleRatingClick)}
             </div>
             <textarea
               value={content}
