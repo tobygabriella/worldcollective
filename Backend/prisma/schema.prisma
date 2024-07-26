@@ -154,6 +154,7 @@ enum NotificationType {
   LIKE_PURCHASE
   REVIEW_REMINDER
   BID
+  RELIST
 }
 
 model Notification {
