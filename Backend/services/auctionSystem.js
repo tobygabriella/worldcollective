@@ -13,21 +13,23 @@ class AuctionSystem {
     const itemBids = this.bids.filter((b) => b.itemId === bid.itemId);
     const maxBid = Math.max(...itemBids.map((b) => b.amount));
     const normalizedBid = maxBid > 0 ? bid.amount / maxBid : 0;
-    const userBidsForTheDay = this.bids.filter(
+
+    const userBidsForTheItem = itemBids.filter(
       (b) => b.bidder.id === bid.bidder.id
     ).length;
-    const normalizedBidsPerDay = Math.min(userBidsForTheDay / 10, 1);
-    const minTimestamp = Math.min(...this.bids.map((b) => b.timestamp));
-    const maxTimestamp = Math.max(...this.bids.map((b) => b.timestamp));
+    const normalizedBidsForTheItem = Math.min(userBidsForTheItem / 5, 1); // Encourages more bids on the same item
+    const currentTime = Date.now() / 1000;
+    const oldestBidTime = Math.min(...itemBids.map((b) => b.timestamp));
+    const timeRange = currentTime - oldestBidTime;
     const normalizedTime =
-      (bid.timestamp - minTimestamp) / (maxTimestamp - minTimestamp || 1);
+      timeRange > 0 ? (currentTime - bid.timestamp) / timeRange : 0;
 
     const score =
-      0.5 * normalizedBid +
-      0.2 * Math.min(bid.bidder.pastPurchases / 10, 1) +
-      0.3 * (bid.bidder.rating / 5) +
-      0.0 * (1 - normalizedTime) +
-      0.0 * (1 - normalizedBidsPerDay);
+      0.3 * normalizedBid +
+      0.2 * Math.min(bid.bidder.pastPurchases / 10) +
+      0.2 * (bid.bidder.rating / 5) +
+      0.1 * (1 - normalizedTime) +
+      0.2 * normalizedBidsForTheItem;
 
     // Round to 4 decimal places
     return Math.round(score * 10000) / 10000;
@@ -212,6 +214,13 @@ class AuctionSystem {
       );
     }
     await Promise.all(promises);
+  }
+
+  getUnassignedItems() {
+    const assignedItems = new Set([...this.assignments.keys()]);
+    return [...this.items.keys()].filter(
+      (itemId) => !assignedItems.has(itemId)
+    );
   }
 
   async processEndingAuctions() {

@@ -20,15 +20,58 @@ router.post("/run-daily-auctions", async (req, res) => {
     for (const [auctionId, winningBid] of assignments) {
       const auction = await prisma.listing.findUnique({
         where: { id: auctionId },
+        include: { seller: true, bids: { include: { user: true } } },
+      });
+      if (auction) {;
+        if (winningBid) {
+          const winnerUser = auction.bids.find(
+            (bid) => bid.user.id === winningBid.bidder.id
+          ).user;
+          const winnerUsername = winnerUser.username;
+
+          // Notify winner
+          const winnerNotificationContent = `You won the auction for "${auction.title}"`;
+          await sendNotification(
+            {
+              content: winnerNotificationContent,
+              userId: winningBid.bidder.id,
+              type: NotificationType.PURCHASE,
+              listingId: auction.id,
+              listingImage: auction.imageUrls[0],
+            },
+            io
+          );
+
+          // Notify seller
+          const sellerNotificationContent = `Your item "${auction.title}" has been sold to @${winnerUsername} for $${winningBid.amount}`;
+          await sendNotification(
+            {
+              content: sellerNotificationContent,
+              userId: auction.seller.id,
+              type: NotificationType.PURCHASE,
+              listingId: auction.id,
+              listingImage: auction.imageUrls[0],
+            },
+            io
+          );
+        }
+      }
+    }
+    // Send notifications for auctions with no winners
+    const unassignedItems = auctionSystem.getUnassignedItems(); // You need to implement this method
+    for (const itemId of unassignedItems) {
+      const auction = await prisma.listing.findUnique({
+        where: { id: itemId },
+        include: { seller: true },
       });
 
-      if (auction && winningBid) {
-        const notificationContent = `You won the auction for "${auction.title}"`;
+      if (auction) {
+        const sellerNotificationContent = `Your auction for "${auction.title}" has ended without a winner`;
         await sendNotification(
           {
-            content: notificationContent,
-            userId: winningBid.bidder.id,
-            type: NotificationType.PURCHASE,
+            content: sellerNotificationContent,
+            userId: auction.seller.id,
+            type: NotificationType.RELIST,
             listingId: auction.id,
             listingImage: auction.imageUrls[0],
           },
@@ -36,7 +79,6 @@ router.post("/run-daily-auctions", async (req, res) => {
         );
       }
     }
-
     res.status(200).json({
       message: `Processed ${processedAuctions} auctions successfully`,
     });
