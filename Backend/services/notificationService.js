@@ -165,83 +165,112 @@ const updateImportantNotificationTypes = async () => {
   }
 };
 
-const performKMeansClustering = async (userId, k = 3, maxIterations = 100) => {
+const performGMMClustering = async (
+  userId,
+  k = 3,
+  maxIterations = 100,
+  tolerance = 1e-4
+) => {
   try {
-    // Step 1: Fetch user activity data for the past week
+    // Step 1: Fetch user activity data for the past week (same as before)
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     const activities = await prisma.userActivity.findMany({
       where: {
         userId,
         timestamp: {
-          gte: oneWeekAgo, // Only include activities from the past week
+          gte: oneWeekAgo,
         },
       },
     });
 
-    // Step 2: Extract the hours from the activity timestamps
-    const hours = activities.map((activity) =>
-      new Date(activity.timestamp).getHours()
+    // Step 2: Extract the hours from the activity timestamps and convert to radians
+    const hours = activities.map(
+      (activity) => (new Date(activity.timestamp).getHours() / 24) * 2 * Math.PI
     );
-    // Step 3: Initialize centroids (randomly select k unique hours)
-    let centroids = [];
-    while (centroids.length < k) {
-      const randomHour = hours[Math.floor(Math.random() * hours.length)];
-      if (!centroids.includes(randomHour)) {
-        centroids.push(randomHour);
-      }
-    }
 
-    // Helper function to calculate distance between two points (hours)
-    const calculateDistance = (point, centroid) => Math.abs(point - centroid);
-
-    // Helper function to update centroids
-    const updateCentroids = (clusters) => {
-      return clusters.map((cluster) => {
-        if (cluster.length === 0) return 0; // Avoid division by zero
-        const sum = cluster.reduce((acc, point) => acc + point, 0);
-        return Math.round(sum / cluster.length);
-      });
+    // Helper functions
+    const normalPDF = (x, mean, variance) => {
+      return (
+        Math.exp((-0.5 * Math.pow(x - mean, 2)) / variance) /
+        Math.sqrt(2 * Math.PI * variance)
+      );
     };
 
-    let clusters = [];
+    const initializeParameters = () => {
+      const weights = Array(k).fill(1 / k);
+      const means = Array(k)
+        .fill()
+        .map(() => Math.random() * 2 * Math.PI);
+      const variances = Array(k)
+        .fill()
+        .map(() => Math.random());
+      return { weights, means, variances };
+    };
+
+    // Initialize parameters
+    let { weights, means, variances } = initializeParameters();
+
+    let logLikelihood = -Infinity;
     let iterations = 0;
 
     while (iterations < maxIterations) {
-      // Step 4: Assign each point to the nearest centroid
-      clusters = Array.from({ length: k }, () => []);
-      hours.forEach((hour) => {
-        let minDistance = Infinity;
-        let closestCentroid = 0;
-        centroids.forEach((centroid, idx) => {
-          const distance = calculateDistance(hour, centroid);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestCentroid = idx;
-          }
-        });
-        clusters[closestCentroid].push(hour);
+      // E-step: Compute responsibilities
+      const responsibilities = hours.map((hour) => {
+        const densities = means.map(
+          (mean, j) => weights[j] * normalPDF(hour, mean, variances[j])
+        );
+        const sum = densities.reduce((a, b) => a + b, 0);
+        return densities.map((density) => density / sum);
       });
 
-      // Step 5: Update centroids based on the mean of assigned points
-      const newCentroids = updateCentroids(clusters);
+      // M-step: Update parameters
+      const Nk = responsibilities[0].map((_, k) =>
+        responsibilities.reduce((sum, r) => sum + r[k], 0)
+      );
 
-      // Check for convergence if centroids do not change
-      if (JSON.stringify(newCentroids) === JSON.stringify(centroids)) break;
+      weights = Nk.map((nk) => nk / hours.length);
 
-      centroids = newCentroids;
+      means = means.map((_, k) => {
+        const sum = hours.reduce(
+          (sum, hour, i) => sum + responsibilities[i][k] * hour,
+          0
+        );
+        return sum / Nk[k];
+      });
+
+      variances = variances.map((_, k) => {
+        const sum = hours.reduce(
+          (sum, hour, i) =>
+            sum + responsibilities[i][k] * Math.pow(hour - means[k], 2),
+          0
+        );
+        return sum / Nk[k];
+      });
+
+      // Compute log-likelihood
+      const newLogLikelihood = hours.reduce((sum, hour) => {
+        const mixture = means.reduce(
+          (mix, mean, j) =>
+            mix + weights[j] * normalPDF(hour, mean, variances[j]),
+          0
+        );
+        return sum + Math.log(mixture);
+      }, 0);
+
+      // Check for convergence
+      if (Math.abs(newLogLikelihood - logLikelihood) < tolerance) break;
+
+      logLikelihood = newLogLikelihood;
       iterations++;
     }
 
-    // Step 6: Determine the best hour from the largest cluster
-    const bestCluster = clusters.reduce(
-      (maxCluster, cluster) =>
-        cluster.length > maxCluster.length ? cluster : maxCluster,
-      clusters[0]
-    );
-    const bestHour = Math.round(
-      bestCluster.reduce((acc, hour) => acc + hour, 0) / bestCluster.length
-    );
+    // Find the component with the highest weight
+    const bestComponent = weights.indexOf(Math.max(...weights));
+    const bestHour =
+      Math.round((means[bestComponent] / (2 * Math.PI)) * 24) % 24;
+
+    // Update the database
     await prisma.userActivePeriods.upsert({
       where: { userId: userId },
       update: { mostActivePeriods: { set: [bestHour] } },
@@ -250,9 +279,10 @@ const performKMeansClustering = async (userId, k = 3, maxIterations = 100) => {
         mostActivePeriods: { set: [bestHour] },
       },
     });
+
     return bestHour;
   } catch (error) {
-    console.error("Error in K-means clustering:", error);
+    console.error("Error in GMM clustering:", error);
   }
 };
 
@@ -271,7 +301,7 @@ const scheduleNotifications = async (userId, newNotification, io) => {
     return;
   }
 
-  const bestHour = await performKMeansClustering(userId);
+  const bestHour = await performGMMClustering(userId);
 
   const job = schedule.scheduleJob({ hour: bestHour, minute: 0 }, async () => {
     const notifications = pendingNotifications.get(userId) || [];
@@ -332,7 +362,7 @@ const clearScheduledJob = (userId) => {
 module.exports = {
   sendNotification,
   updateImportantNotificationTypes,
-  performKMeansClustering,
+  performGMMClustering,
   scheduleNotifications,
   clearScheduledJob,
 };
