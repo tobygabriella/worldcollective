@@ -483,7 +483,7 @@ router.get(
 );
 
 router.post(
-  "/create-payment-intent",
+  "/create-payment-intent/single",
   verifyToken,
   logActivity(),
   async (req, res) => {
@@ -617,7 +617,7 @@ router.post(
       const transaction = await prisma.transaction.findFirst({
         where: {
           listingId: parseInt(listingId),
-          buyerId: reviewerId,
+          buyerId: parseInt(reviewerId),
         },
       });
 

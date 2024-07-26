@@ -26,6 +26,10 @@ const AppHeader = () => {
     navigate("/notifications");
   };
 
+  const handleCartClick = async () => {
+    navigate("/cart");
+  };
+
   const showWelcome = location.pathname === "/";
   const initials = getInitials(user?.firstname, user?.lastname);
 
@@ -68,6 +72,13 @@ const AppHeader = () => {
                 {unreadCount > 0 && (
                   <span className="notificationBadge">{unreadCount}</span>
                 )}
+              </div>
+              <div
+                className="iconWrapper"
+                data-tooltip="Shopping Cart"
+                onClick={handleCartClick}
+              >
+                <i className="fas fa-shopping-cart"></i>
               </div>
               <Link
                 to="/wishlist"

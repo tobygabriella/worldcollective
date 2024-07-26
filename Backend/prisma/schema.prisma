@@ -38,7 +38,26 @@ model User {
   activePeriods    UserActivePeriods?
   verificationTokens EmailVerificationToken[]
   bids            Bid[]
+  cart            Cart?
   }
+
+  model Cart {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id        Int       @id @default(autoincrement())
+  cartId    Int
+  listingId Int
+  quantity  Int
+  cart      Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  listing   Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, listingId])
+}
 
 model EmailVerificationToken {
   id        Int      @id @default(autoincrement())
@@ -93,6 +112,7 @@ model EmailVerificationToken {
   currentBid      Decimal?
   auctionEndTime  DateTime?
   bids            Bid[]
+  cartItems       CartItem[]
 }
 
 model Bid {

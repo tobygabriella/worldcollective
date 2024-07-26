@@ -44,6 +44,9 @@ const ListingDetailContainer = lazy(() =>
 const AuctionListingPage = lazy(() =>
   import("./Components/AuctionListing/AuctionListingPage.jsx")
 );
+const ShoppingCart = lazy(() =>
+  import("./Components/ShoppingCart/ShoppingCart.jsx")
+);
 
 function App() {
   return (
@@ -59,15 +62,15 @@ function App() {
               <Route path="/createListing" element={<CreateListing />} />
               <Route path="/listings/:id" element={<ListingDetailContainer />}>
                 <Route index element={<ListingDetails />} />
-                <Route
-                  path="buy"
-                  element={
-                    <Elements stripe={stripePromise}>
-                      <PaymentPage />
-                    </Elements>
-                  }
-                />
               </Route>
+              <Route
+                path="/checkout"
+                element={
+                  <Elements stripe={stripePromise}>
+                    <PaymentPage />
+                  </Elements>
+                }
+              />
               <Route
                 path="/listings/:filterType/:filterValue"
                 element={<FilteredListing />}
@@ -77,7 +80,11 @@ function App() {
               <Route path="/wishlist" element={<Wishlist />} />
               <Route path="/confirmation" element={<ConfirmationPage />} />
               <Route path="/notifications" element={<Notifications />} />
-              <Route path ="/listings/auctions" element={<AuctionListingPage/>} />
+              <Route
+                path="/listings/auctions"
+                element={<AuctionListingPage />}
+              />
+              <Route path="/cart" element={<ShoppingCart />} />
             </Routes>
           </Suspense>
         </SocketProvider>

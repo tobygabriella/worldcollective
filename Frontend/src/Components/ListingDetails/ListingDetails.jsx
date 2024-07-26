@@ -42,8 +42,61 @@ const ListingDetails = () => {
     }
   };
 
-  const handleBuyNow = () => {
-    navigate(`buy`);
+  const handleBuyNow = async () => {
+    try {
+      const response = await fetch(`${API_KEY}/create-payment-intent/single`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ amount: listing.price }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        navigate("/checkout", {
+          state: { clientSecret: data.clientSecret, listing },
+        });
+      } else {
+        console.error("Failed to create payment intent");
+      }
+    } catch (error) {
+      console.error("Error creating payment intent:", error);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    try {
+      const response = await fetch(`${API_KEY}/cart`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          listingId: listing.id,
+          quantity: 1,
+        }),
+      });
+
+      if (response.ok) {
+        alert("Item added to cart!");
+      } else if (response.status === 400) {
+        const data = await response.json();
+        if (data.error === "Item already in cart") {
+          alert("Item is already in your cart.");
+        } else {
+          console.error("Failed to add item to cart");
+        }
+      } else {
+        console.error("Failed to add item to cart");
+      }
+    } catch (error) {
+      console.error("Error adding item to cart:", error);
+    }
   };
 
   const initials = getInitials(
@@ -121,9 +174,17 @@ const ListingDetails = () => {
                     <p className="error">The auction has ended.</p>
                   )
                 ) : (
-                  <button className="buyNowButton" onClick={handleBuyNow}>
-                    Buy Now
-                  </button>
+                  <>
+                    <button className="buyNowButton" onClick={handleBuyNow}>
+                      Buy Now
+                    </button>
+                    <button
+                      className="addToCartButton"
+                      onClick={handleAddToCart}
+                    >
+                      Add to Cart
+                    </button>
+                  </>
                 )}
               </>
             )
