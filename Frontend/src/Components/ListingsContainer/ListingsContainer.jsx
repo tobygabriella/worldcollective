@@ -32,8 +32,13 @@ const ListingsContainer = ({
   const handleSelectFilter = (filterType, option) => {
     const updatedFilters = {
       ...selectedFilters,
-      [filterType]: option,
+      [filterType]: option || undefined, // Remove the filter if option is empty
     };
+
+    if (!option) {
+      delete updatedFilters[filterType]; // Remove the filter type if no option is selected
+    }
+
     setSelectedFilters(updatedFilters);
     const queryParams = new URLSearchParams(updatedFilters).toString();
     const newUrl = `${location.pathname}?${queryParams}`;

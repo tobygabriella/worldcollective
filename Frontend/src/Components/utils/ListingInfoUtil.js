@@ -62,6 +62,6 @@ export function getSubcategory(category) {
     case Category.MENSWEAR:
       return MENSWEAR_SUBCATEGORY;
     default:
-      return [];
+      return [...WOMENSWEAR_SUBCATEGORY, ...MENSWEAR_SUBCATEGORY];
   }
 }

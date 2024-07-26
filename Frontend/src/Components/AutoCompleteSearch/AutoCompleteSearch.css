@@ -1,0 +1,31 @@
+.autocompleteSearch {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.suggestionsList {
+  position: absolute;
+  width: 100%;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-top: none;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.suggestionItem {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.suggestionItem:hover {
+  background-color: #f0f0f0;
+}

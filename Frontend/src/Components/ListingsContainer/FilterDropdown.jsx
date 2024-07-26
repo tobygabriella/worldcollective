@@ -13,10 +13,17 @@ const FilterDropdown = ({ title, options, onSelect, selected }) => {
   const location = useLocation();
 
   const handleSelect = (option) => {
-    onSelect(option);
+    const isSelected = selected === option;
+    const newSelection = isSelected ? "" : option;
+    onSelect(newSelection);
     setIsOpen(false);
+
     const searchParams = new URLSearchParams(location.search);
-    searchParams.set(title.toLowerCase(), option);
+    if (newSelection) {
+      searchParams.set(title.toLowerCase(), newSelection);
+    } else {
+      searchParams.delete(title.toLowerCase());
+    }
     const newUrl = `${location.pathname}?${searchParams.toString()}`;
     navigate(newUrl);
   };
@@ -28,6 +35,7 @@ const FilterDropdown = ({ title, options, onSelect, selected }) => {
       return getSubcategoryName(option);
     return option;
   };
+  
 
   return (
     <div className="filterDropdown">

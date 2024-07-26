@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import ListingItem from "../ListingItem/ListingItem";
 import ListingsContainer from "../ListingsContainer/ListingsContainer";
-import { getConditionName, getCategoryName } from "../utils/ListingInfoUtil.js";
+import { getCategoryName } from "../utils/ListingInfoUtil.js";
 import { fetchListingsWithLiked } from "../utils/likeStatusUtil.js";
 import useLoading from "../CustomHooks/useLoading.jsx";
 import Loading from "../Loading/Loading.jsx";
@@ -23,7 +23,7 @@ const FilteredListings = () => {
         const translatedParams = new URLSearchParams();
         queryParams.forEach((value, key) => {
           if (key === "condition") {
-            translatedParams.set(key, getConditionName(value));
+            translatedParams.set(key, value);
           } else if (key === "category") {
             translatedParams.set(key, getCategoryName(value));
           } else {
@@ -39,8 +39,7 @@ const FilteredListings = () => {
           }
         );
         const data = await response.json();
-        const listingsWithLiked =
-          await fetchListingsWithLiked(data);
+        const listingsWithLiked = await fetchListingsWithLiked(data);
         setListings(listingsWithLiked);
       } catch (error) {
         console.error("Error fetching listings:", error);
@@ -48,7 +47,6 @@ const FilteredListings = () => {
         stopLoading();
       }
     };
-
 
     fetchListings();
   }, [filterType, filterValue, location.search]);

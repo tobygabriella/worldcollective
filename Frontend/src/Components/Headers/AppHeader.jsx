@@ -4,6 +4,7 @@ import { useAuth } from "../Contexts/AuthContext";
 import "./AppHeader.css";
 import { getInitials } from "../utils/initialsUtils";
 import { useSocket } from "../Contexts/SocketContext";
+import AutocompleteSearch from "../AutoCompleteSearch/AutocompleteSearch.jsx";
 
 const AppHeader = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -39,13 +40,9 @@ const AppHeader = () => {
         <h3>WorldCollection</h3>
       </Link>
       <div className="searchContainer">
-        <input
-          type="text"
-          className="searchInput"
-          placeholder="Search for"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={handleSearch}
+        <AutocompleteSearch
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
         />
         <span
           className="searchIcon"

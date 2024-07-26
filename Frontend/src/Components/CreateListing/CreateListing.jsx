@@ -37,6 +37,23 @@ const CreateListing = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (
+      !formInput.title ||
+      !formInput.description ||
+      !formInput.category ||
+      !formInput.subcategory ||
+      !formInput.brand ||
+      !formInput.condition ||
+      (!formInput.isAuction && !formInput.price) ||
+      (formInput.isAuction && !formInput.initialBid) ||
+      photos.length === 0
+    ) {
+      setError(
+        "Please fill out all required fields and add at least one photo."
+      );
+      return;
+    }
+
     const formData = new FormData();
     Object.keys(formInput).forEach((key) => {
       formData.append(key, formInput[key]);

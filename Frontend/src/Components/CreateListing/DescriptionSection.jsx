@@ -29,6 +29,7 @@ const DescriptionSection = ({ formInput, setFormInput }) => {
         value={formInput.description}
         onChange={handleChange}
         maxLength="1000"
+        required
       ></textarea>
       <div className="hashtagInfo">
         <span>Max:1000</span>
