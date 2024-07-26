@@ -1,33 +1,50 @@
-const { startOfDay, endOfDay } = require("date-fns");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-
 class AuctionSystem {
-  constructor(prisma) {
-    this.prisma = prisma;
+  constructor() {
     this.bids = [];
     this.items = new Map();
-    this.assignments = new Map();
+  }
+
+  addItem(itemId, reservePrice) {
+    this.items.set(itemId, reservePrice);
+  }
+
+  placeBid(bidder, itemId, amount, timestamp) {
+    if (!this.items.has(itemId)) {
+      throw new Error(`Item ${itemId} does not exist`);
+    }
+    if (amount < 0) {
+      throw new Error(`Bid amount cannot be negative`);
+    }
+    const reservePrice = this.items.get(itemId);
+    if (amount < reservePrice) {
+      throw new Error(
+        `Bid amount cannot be less than the reserve price of ${reservePrice}`
+      );
+    }
+    this.bids.push(new Bid(bidder, itemId, amount, timestamp));
   }
 
   calculateBidScore(bid) {
     const itemBids = this.bids.filter((b) => b.itemId === bid.itemId);
     const maxBid = Math.max(...itemBids.map((b) => b.amount));
     const normalizedBid = maxBid > 0 ? bid.amount / maxBid : 0;
-    const userBidsForTheDay = this.bids.filter(
+
+    const userBidsForTheItem = itemBids.filter(
       (b) => b.bidder.id === bid.bidder.id
     ).length;
-    const normalizedBidsPerDay = Math.min(userBidsForTheDay / 10, 1);
-    const minTimestamp = Math.min(...this.bids.map((b) => b.timestamp));
-    const maxTimestamp = Math.max(...this.bids.map((b) => b.timestamp));
+    const normalizedBidsForTheItem = Math.min(userBidsForTheItem / 5, 1); // Encourages more bids on the same item
+    const currentTime = Date.now() / 1000;
+    const oldestBidTime = Math.min(...itemBids.map((b) => b.timestamp));
+    const timeRange = currentTime - oldestBidTime;
     const normalizedTime =
-      (bid.timestamp - minTimestamp) / (maxTimestamp - minTimestamp || 1);
+      timeRange > 0 ? (currentTime - bid.timestamp) / timeRange : 0;
 
     const score =
-      0.5 * normalizedBid +
-      0.2 * Math.min(bid.bidder.pastPurchases / 10, 1) +
-      0.3 * (bid.bidder.rating / 5) +
-      0.0 * (1 - normalizedTime) +
-      0.0 * (1 - normalizedBidsPerDay);
+      0.3 * normalizedBid +
+      0.2 * Math.min(bid.bidder.pastPurchases / 10) +
+      0.2 * (bid.bidder.rating / 5) +
+      0.1 * (1 - normalizedTime) +
+      0.2 * normalizedBidsForTheItem;
 
     // Round to 4 decimal places
     return Math.round(score * 10000) / 10000;
@@ -43,14 +60,19 @@ class AuctionSystem {
       const existingBidIndex = acc.findIndex(
         (b) => b.bidder.id === bid.bidder.id && b.itemId === bid.itemId
       );
-      if (
-        existingBidIndex === -1 ||
-        this.calculateBidScore(acc[existingBidIndex]) < bidScore
-      ) {
-        if (existingBidIndex !== -1) {
-          acc.splice(existingBidIndex, 1);
-        }
+
+      if (existingBidIndex === -1) {
         acc.push(bid);
+      } else {
+        const existingBid = acc[existingBidIndex];
+        const existingScore = this.calculateBidScore(existingBid);
+
+        if (
+          bidScore > existingScore ||
+          (bidScore === existingScore && this.compareBids(bid, existingBid) > 0)
+        ) {
+          acc[existingBidIndex] = bid;
+        }
       }
       return acc;
     }, []);
@@ -152,6 +174,7 @@ class AuctionSystem {
   getAssignments() {
     return this.assignments;
   }
+
   compareBids(a, b) {
     if (a.amount !== b.amount) {
       return a.amount - b.amount;
@@ -164,159 +187,22 @@ class AuctionSystem {
     }
     return b.timestamp - a.timestamp;
   }
-
-  async saveAssignments(assignments) {
-    const promises = [];
-    for (const [itemId, winningBid] of assignments) {
-      // Confirm the payment intent for the winning bid
-      promises.push(
-        (async () => {
-          try {
-            const paymentIntent = await stripe.paymentIntents.create({
-              amount: winningBid.amount * 100,
-              currency: "usd",
-              customer: winningBid.bidder.stripeCustomerId,
-              payment_method: winningBid.paymentMethodId,
-              use_stripe_sdk: true,
-              off_session: true,
-              confirm: true,
-              payment_method_types: ["card"],
-            });
-
-            if (paymentIntent.status === "succeeded") {
-              await this.prisma.listing.update({
-                where: { id: itemId },
-                data: {
-                  status: "sold",
-                  currentBid: winningBid.amount,
-                },
-              });
-
-              await this.prisma.transaction.create({
-                data: {
-                  listingId: itemId,
-                  buyerId: winningBid.bidder.id,
-                  paymentIntentId: paymentIntent.id,
-                },
-              });
-            } else {
-              console.error(`Payment for auction ${itemId} did not succeed.`);
-            }
-          } catch (error) {
-            console.error(
-              `Error confirming payment intent for auction ${itemId}:`,
-              error
-            );
-          }
-        })()
-      );
-    }
-    await Promise.all(promises);
-  }
-
-  async processEndingAuctions() {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-
-    const endingAuctions = await this.prisma.listing.findMany({
-      where: {
-        isAuction: true,
-        status: "active",
-        auctionEndTime: {
-          gte: startOfDay(today),
-          lte: endOfDay(today),
-        },
-      },
-      include: {
-        bids: {
-          include: {
-            user: true,
-          },
-        },
-      },
-    });
-
-    // Load all auction data at once
-    this.items.clear();
-    this.bids = [];
-
-    const userPromises = endingAuctions.flatMap((auction) =>
-      auction.bids.map((bid) =>
-        this.prisma.user.findUnique({
-          where: { id: bid.user.id },
-          select: {
-            id: true,
-            averageRating: true,
-            stripeCustomerId: true,
-            _count: {
-              select: { transactions: true },
-            },
-          },
-        })
-      )
-    );
-
-    const users = await Promise.all(userPromises);
-
-    const userMap = new Map(users.map((user) => [user.id, user]));
-
-    for (const auction of endingAuctions) {
-      this.items.set(auction.id, parseFloat(auction.initialBid));
-      for (const bid of auction.bids) {
-        const user = userMap.get(bid.user.id);
-        this.bids.push(
-          new Bid(
-            new Bidder(
-              user.id,
-              user._count.transactions,
-              user.averageRating,
-              user.stripeCustomerId
-            ),
-            auction.id,
-            parseFloat(bid.amount),
-            bid.createdAt.getTime() / 1000,
-            bid.paymentMethodId
-          )
-        );
-      }
-    }
-
-    // process all auctions together
-    const assignments = this.assignItems();
-
-    // Save assignments and update unsold auctions
-    await this.saveAssignments(assignments);
-
-    const unsoldUpdates = endingAuctions
-      .filter((auction) => !assignments.has(auction.id))
-      .map((auction) =>
-        this.prisma.listing.update({
-          where: { id: auction.id },
-          data: { status: "unsold" },
-        })
-      );
-
-    await Promise.all(unsoldUpdates);
-    return endingAuctions.length;
-  }
 }
 
 class Bidder {
-  constructor(id, pastPurchases, rating, stripeCustomerId) {
+  constructor(id, pastPurchases, rating) {
     this.id = id;
     this.pastPurchases = pastPurchases;
     this.rating = rating;
-    this.stripeCustomerId = stripeCustomerId;
   }
 }
 
 class Bid {
-  constructor(bidder, itemId, amount, timestamp, paymentMethodId) {
+  constructor(bidder, itemId, amount, timestamp) {
     this.bidder = bidder;
     this.itemId = itemId;
     this.amount = amount;
     this.timestamp = timestamp;
-    this.paymentMethodId = paymentMethodId;
   }
 }
 
