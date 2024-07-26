@@ -15,7 +15,8 @@ const getIsListingNotif = (notif) => {
     notif.type === "LIKE" ||
     notif.type === "PURCHASE" ||
     notif.type === "LIKE_PURCHASE" ||
-    notif.type === "BID"
+    notif.type === "BID" ||
+    notif.type === "RELIST"
   );
 };
 
@@ -24,10 +25,9 @@ const Notifications = () => {
     notifications,
     markAsRead,
     fetchNotifications,
-    setNotifications,
     pendingNotificationsCount,
-    clearPendingCount,
     isNotificationsLoaded,
+    handleLoadPendingNotifications,
   } = useSocket();
   const { startLoading, isLoading, stopLoading } = useLoading();
   const navigate = useNavigate();
@@ -52,28 +52,6 @@ const Notifications = () => {
 
   const handleTypeChange = (type) => {
     setFilterType(type);
-  };
-
-  const handleLoadPendingNotifications = async () => {
-    try {
-      startLoading();
-      const response = await fetch(`${API_KEY}/notifications/pending`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications((prev) => [...data, ...prev]);
-        clearPendingCount();
-      }
-    } catch (error) {
-      console.error("Error loading pending notifications:", error);
-    } finally {
-      stopLoading();
-    }
   };
 
   if (isLoading) {

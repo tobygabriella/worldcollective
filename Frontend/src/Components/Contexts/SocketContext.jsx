@@ -20,6 +20,15 @@ export const SocketProvider = ({ children }) => {
   const { startLoading, isLoading, stopLoading } = useLoading();
   const [isNotificationsLoaded, setIsNotificationsLoaded] = useState(false);
 
+  const formatNotificationTimes = (notifications) => {
+    return notifications.map((notif) => ({
+      ...notif,
+      timeAgo: formatDistanceToNow(new Date(notif.createdAt), {
+        addSuffix: true,
+      }),
+    }));
+  };
+
   const fetchNotifications = async (type = "") => {
     startLoading();
     try {
@@ -33,8 +42,9 @@ export const SocketProvider = ({ children }) => {
       });
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data);
-        setUnreadCount(data.filter((notif) => !notif.isRead).length);
+        const formattedData = formatNotificationTimes(data);
+        setNotifications(formattedData);
+        setUnreadCount(formattedData.filter((notif) => !notif.isRead).length);
         setIsNotificationsLoaded(true);
       } else {
         throw new Error("Failed to fetch notifications");
@@ -62,6 +72,29 @@ export const SocketProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Error fetching pending notifications count:", error);
+    } finally {
+      stopLoading();
+    }
+  };
+
+  const handleLoadPendingNotifications = async () => {
+    startLoading();
+    try {
+      const response = await fetch(`${API_KEY}/notifications/pending`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const formattedData = formatNotificationTimes(data);
+        setNotifications((prev) => [...formattedData, ...prev]);
+        clearPendingCount();
+      }
+    } catch (error) {
+      console.error("Error loading pending notifications:", error);
     } finally {
       stopLoading();
     }
@@ -154,6 +187,7 @@ export const SocketProvider = ({ children }) => {
         pendingNotificationsCount,
         clearPendingCount,
         isNotificationsLoaded,
+        handleLoadPendingNotifications,
       }}
     >
       {isLoading && <Loading />}
