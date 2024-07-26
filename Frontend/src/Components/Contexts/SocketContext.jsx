@@ -100,6 +100,11 @@ export const SocketProvider = ({ children }) => {
     }
   };
 
+  const clearNotificationState = () => {
+    setUnreadCount(0);
+    setIsNotificationsLoaded(false);
+  };
+
   useEffect(() => {
     const userId = localStorage.getItem("userId");
 
@@ -188,6 +193,7 @@ export const SocketProvider = ({ children }) => {
         clearPendingCount,
         isNotificationsLoaded,
         handleLoadPendingNotifications,
+        clearNotificationState,
       }}
     >
       {isLoading && <Loading />}
