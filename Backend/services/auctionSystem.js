@@ -1,4 +1,5 @@
 const { startOfDay, endOfDay } = require("date-fns");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 class AuctionSystem {
   constructor(prisma) {
@@ -116,21 +117,44 @@ class AuctionSystem {
 
   async saveAssignments(assignments) {
     for (const [itemId, winningBid] of assignments) {
-      await this.prisma.listing.update({
-        where: { id: itemId },
-        data: {
-          status: "sold",
-          currentBid: winningBid.amount,
-        },
-      });
+      // Confirm the payment intent for the winning bid
+      try {
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: winningBid.amount * 100,
+          currency: "usd",
+          customer: winningBid.bidder.stripeCustomerId,
+          payment_method: winningBid.paymentMethodId,
+          use_stripe_sdk: true,
+          off_session: true,
+          confirm: true,
+          payment_method_types: ["card"],
+        });
 
-      await this.prisma.transaction.create({
-        data: {
-          listingId: itemId,
-          buyerId: winningBid.bidder.id,
-          paymentIntentId: "AUCTION_WIN",
-        },
-      });
+        if (paymentIntent.status === "succeeded") {
+          await this.prisma.listing.update({
+            where: { id: itemId },
+            data: {
+              status: "sold",
+              currentBid: winningBid.amount,
+            },
+          });
+
+          await this.prisma.transaction.create({
+            data: {
+              listingId: itemId,
+              buyerId: winningBid.bidder.id,
+              paymentIntentId: paymentIntent.id,
+            },
+          });
+        } else {
+          console.error(`Payment for auction ${itemId} did not succeed.`);
+        }
+      } catch (error) {
+        console.error(
+          `Error confirming payment intent for auction ${itemId}:`,
+          error
+        );
+      }
     }
   }
 
@@ -168,6 +192,7 @@ class AuctionSystem {
           select: {
             id: true,
             averageRating: true,
+            stripeCustomerId: true,
             _count: {
               select: { transactions: true },
             },
@@ -175,10 +200,16 @@ class AuctionSystem {
         });
         this.bids.push(
           new Bid(
-            new Bidder(user.id, user._count.transactions, user.averageRating),
+            new Bidder(
+              user.id,
+              user._count.transactions,
+              user.averageRating,
+              user.stripeCustomerId
+            ),
             auction.id,
             parseFloat(bid.amount),
-            bid.createdAt.getTime() / 1000
+            bid.createdAt.getTime() / 1000,
+            bid.paymentMethodId
           )
         );
       }
@@ -203,19 +234,21 @@ class AuctionSystem {
 }
 
 class Bidder {
-  constructor(id, pastPurchases, rating) {
+  constructor(id, pastPurchases, rating, stripeCustomerId) {
     this.id = id;
     this.pastPurchases = pastPurchases;
     this.rating = rating;
+    this.stripeCustomerId = stripeCustomerId;
   }
 }
 
 class Bid {
-  constructor(bidder, itemId, amount, timestamp) {
+  constructor(bidder, itemId, amount, timestamp, paymentMethodId) {
     this.bidder = bidder;
     this.itemId = itemId;
     this.amount = amount;
     this.timestamp = timestamp;
+    this.paymentMethodId = paymentMethodId;
   }
 }
 

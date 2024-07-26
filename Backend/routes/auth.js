@@ -36,6 +36,18 @@ router.post("/register", async (req, res) => {
       },
     });
 
+    // Create a Stripe customer
+    const customer = await stripe.customers.create({
+      email: email,
+      name: `${firstname} ${lastname}`,
+    });
+
+    // Update the user with the Stripe customer ID
+    await prisma.user.update({
+      where: { id: newUser.id },
+      data: { stripeCustomerId: customer.id },
+    });
+
     const token = crypto.randomBytes(32).toString("hex");
     await prisma.emailVerificationToken.create({
       data: {

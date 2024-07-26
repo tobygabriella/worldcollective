@@ -6,7 +6,10 @@ import "./ListingDetails.css";
 import { getInitials } from "../utils/initialsUtils";
 import PlaceBidModal from "../Bid/PlaceBidModal";
 import Countdown from "../Countdown/Countdown";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
 
 const ListingDetails = () => {
@@ -142,13 +145,15 @@ const ListingDetails = () => {
         </div>
       </div>
       {isBidModalOpen && (
-        <PlaceBidModal
-          onClose={() => setIsBidModalOpen(false)}
-          listingId={listing.id}
-          initialPrice={listing.price}
-          isSeller={user?.id === listing.sellerId}
-          auctionEndTime={listing.auctionEndTime}
-        />
+        <Elements stripe={stripePromise}>
+          <PlaceBidModal
+            onClose={() => setIsBidModalOpen(false)}
+            listingId={listing.id}
+            initialPrice={listing.price}
+            isSeller={user?.id === listing.sellerId}
+            auctionEndTime={listing.auctionEndTime}
+          />
+        </Elements>
       )}
     </div>
   );

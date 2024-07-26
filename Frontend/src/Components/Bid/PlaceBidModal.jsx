@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import "./PlaceBidModal.css";
 
 const API_KEY = import.meta.env.VITE_BACKEND_ADDRESS;
@@ -7,6 +8,11 @@ const PlaceBidModal = ({ onClose, listingId, initialPrice, isSeller }) => {
   const [bids, setBids] = useState([]);
   const [newBid, setNewBid] = useState("");
   const [error, setError] = useState("");
+  const [clientSecret, setClientSecret] = useState(null);
+  const [cardRequired, setCardRequired] = useState(false);
+
+  const stripe = useStripe();
+  const elements = useElements();
 
   useEffect(() => {
     fetchPreviousBids();
@@ -46,6 +52,70 @@ const PlaceBidModal = ({ onClose, listingId, initialPrice, isSeller }) => {
       return;
     }
 
+    // Check if card details are required
+    if (!clientSecret && !cardRequired) {
+      setCardRequired(true);
+      createSetupIntent();
+      return;
+    }
+
+    // Handle the card details submission if required
+    if (cardRequired) {
+      handleCardDetailsSubmit(bidAmount);
+    } else {
+      submitBid(bidAmount, null);
+    }
+  };
+
+  const createSetupIntent = async () => {
+    try {
+      const response = await fetch(`${API_KEY}/create-setup-intent`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setClientSecret(data.clientSecret);
+      } else {
+        console.error("Failed to create setup intent");
+      }
+    } catch (error) {
+      console.error("Error creating setup intent:", error);
+    }
+  };
+
+  const handleCardDetailsSubmit = async (bidAmount) => {
+    if (!stripe || !elements) {
+      return;
+    }
+
+    const cardElement = elements.getElement(CardElement);
+
+    const { error, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
+      payment_method: {
+        card: cardElement,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      if (setupIntent.status === "succeeded") {
+        submitBid(bidAmount, setupIntent.payment_method);
+      } else {
+        setError(
+          "Setup was not successful. Please try another payment method."
+        );
+      }
+    }
+  };
+
+  const submitBid = async (bidAmount, paymentMethodId) => {
     try {
       const response = await fetch(`${API_KEY}/listings/${listingId}/bids`, {
         method: "POST",
@@ -54,7 +124,7 @@ const PlaceBidModal = ({ onClose, listingId, initialPrice, isSeller }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ amount: newBid }),
+        body: JSON.stringify({ amount: bidAmount, paymentMethodId }),
       });
 
       if (response.ok) {
@@ -98,6 +168,11 @@ const PlaceBidModal = ({ onClose, listingId, initialPrice, isSeller }) => {
               onChange={(e) => setNewBid(e.target.value)}
               placeholder="Enter your bid"
             />
+            {cardRequired && (
+              <div>
+                <CardElement />
+              </div>
+            )}
             <button onClick={handleBidSubmit}>Submit Bid</button>
             {error && <p className="error">{error}</p>}
           </>
