@@ -54,6 +54,11 @@ router.post(
     const sellerId = req.user.id;
 
     try {
+      const auctionEndTime =
+        isAuction === "true"
+          ? new Date(new Date().setHours(23, 59, 59, 999))
+          : null;
+
       const newListing = await prisma.listing.create({
         data: {
           title,
@@ -69,10 +74,7 @@ router.post(
           isAuction: isAuction === "true",
           initialBid: isAuction === "true" ? price : null,
           currentBid: isAuction === "true" ? price : null,
-          auctionEndTime:
-            isAuction === "true"
-              ? new Date(Date.now() + 24 * 60 * 60 * 1000)
-              : null,
+          auctionEndTime: auctionEndTime,
         },
       });
       res.status(201).json(newListing);
@@ -755,8 +757,10 @@ router.post(
     const { id: listingId } = req.params;
     const { amount } = req.body;
     const userId = req.user.id;
+    const io = req.app.locals.io;
 
-    if (isNaN(amount) || amount <= 0) {
+    const bidAmount = parseInt(amount);
+    if (isNaN(bidAmount) || bidAmount <= 0) {
       return res.status(400).json({ error: "Invalid bid amount" });
     }
 
@@ -776,7 +780,7 @@ router.post(
           ? Math.max(...listing.bids.map((bid) => bid.amount))
           : listing.initialBid;
 
-      if (parseFloat(amount) <= currentHighestBid) {
+      if (bidAmount <= currentHighestBid) {
         return res.status(400).json({
           error: "Your bid must be higher than the current highest bid.",
         });
@@ -785,7 +789,7 @@ router.post(
       // Create the new bid
       const bid = await prisma.bid.create({
         data: {
-          amount: parseFloat(amount),
+          amount: bidAmount,
           listingId: parseInt(listingId),
           userId: parseInt(userId),
         },
@@ -795,9 +799,55 @@ router.post(
       await prisma.listing.update({
         where: { id: parseInt(listingId) },
         data: {
-          currentBid: parseFloat(amount),
+          currentBid: bidAmount,
         },
       });
+
+      // Fetch the bidder's username
+      const bidder = await prisma.user.findUnique({
+        where: { id: parseInt(userId) },
+      });
+
+      // Create notification for the seller
+      const notificationContent = `@${bidder.username} just bid $${amount} on your item "${listing.title}"`;
+      const notificationData = {
+        content: notificationContent,
+        userId: listing.sellerId,
+        isRead: false,
+        type: NotificationType.BID,
+        listingId: listing.id,
+        listingImage: listing.imageUrls[0],
+        usernameTarget: bidder.username,
+      };
+      await sendNotification(notificationData, io);
+
+      const previousBidders = await prisma.bid.findMany({
+        where: {
+          listingId: parseInt(listingId),
+          userId: {
+            not: parseInt(userId),
+          },
+        },
+        distinct: ["userId"],
+        include: { user: true },
+      });
+
+      for (const previousBid of previousBidders) {
+        if (!previousBid.user) {
+          continue;
+        }
+        const notificationContentForPreviousBidder = `Another user has placed a bid on the item "${listing.title}" you previously placed a bid on. Do you want to place another bid?`;
+        const notificationDataForPreviousBidder = {
+          content: notificationContentForPreviousBidder,
+          userId: previousBid.userId,
+          isRead: false,
+          type: NotificationType.BID,
+          listingId: listing.id,
+          listingImage: listing.imageUrls[0],
+          usernameTarget: previousBid.user.username,
+        };
+        await sendNotification(notificationDataForPreviousBidder, io);
+      }
 
       res.status(201).json(bid);
     } catch (error) {

@@ -89,7 +89,8 @@ const Notifications = () => {
     const isListingNotif =
       notif.type === "LIKE" ||
       notif.type === "PURCHASE" ||
-      notif.type === "LIKE_PURCHASE";
+      notif.type === "LIKE_PURCHASE" ||
+      notif.type === "BID";
 
     if (notif.type === "FOLLOW") {
       navigate(`/users/${notif.usernameTarget}`);
@@ -109,7 +110,8 @@ const Notifications = () => {
           const isListingNotif =
             notif.type === "LIKE" ||
             notif.type === "PURCHASE" ||
-            notif.type === "LIKE_PURCHASE";
+            notif.type === "LIKE_PURCHASE" ||
+            notif.type === "BID";
           return (
             <li
               key={index}

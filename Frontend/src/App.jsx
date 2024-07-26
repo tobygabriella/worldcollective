@@ -41,6 +41,9 @@ const Notifications = lazy(() =>
 const ListingDetailContainer = lazy(() =>
   import("./Components/DetailContainer/ListingDetailContainer.jsx")
 );
+const AuctionListingPage = lazy(() =>
+  import("./Components/AuctionListing/AuctionListingPage.jsx")
+);
 
 function App() {
   return (
@@ -74,6 +77,7 @@ function App() {
               <Route path="/wishlist" element={<Wishlist />} />
               <Route path="/confirmation" element={<ConfirmationPage />} />
               <Route path="/notifications" element={<Notifications />} />
+              <Route path ="/listings/auctions" element={<AuctionListingPage/>} />
             </Routes>
           </Suspense>
         </SocketProvider>
