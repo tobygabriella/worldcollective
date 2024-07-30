@@ -28,6 +28,8 @@ const Notifications = () => {
     pendingNotificationsCount,
     isNotificationsLoaded,
     handleLoadPendingNotifications,
+    setIsNotificationsLoaded,
+    setFilterType,
   } = useSocket();
   const { startLoading, isLoading, stopLoading } = useLoading();
   const navigate = useNavigate();
@@ -41,7 +43,7 @@ const Notifications = () => {
     successMessage,
     errorMessage,
   } = useReview();
-  const [filterType, setFilterType] = useState("");
+  const [filterType, setFilterTypeState] = useState("");
 
   useEffect(() => {
     if (!isNotificationsLoaded) {
@@ -52,6 +54,8 @@ const Notifications = () => {
 
   const handleTypeChange = (type) => {
     setFilterType(type);
+    setFilterTypeState(type);
+    setIsNotificationsLoaded(false);
   };
 
   if (isLoading) {
