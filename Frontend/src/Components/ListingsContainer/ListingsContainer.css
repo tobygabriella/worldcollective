@@ -1,11 +1,12 @@
 .listingsContainer {
-  margin-top: 80px;
+  padding-top: 80px;
 }
 
 .listingsContent {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  padding-top: 80px;
 }
 
 .filters {
