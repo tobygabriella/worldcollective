@@ -161,3 +161,103 @@
   right: 0;
   transform: translate(50%, -50%);
 }
+
+@media (max-width: 1200px) {
+  .searchContainer {
+    width: 50%;
+  }
+
+  .userProfile {
+    margin-right: 30px;
+  }
+
+  .icons {
+    margin-right: 20px;
+  }
+}
+
+@media (max-width: 992px) {
+  .searchContainer {
+    width: 60%;
+  }
+
+  .appName {
+    font-size: 1.3em;
+  }
+
+  .userProfile {
+    margin-right: 20px;
+  }
+
+  .icons {
+    margin-right: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .searchContainer {
+    width: 70%;
+  }
+
+  .userProfile {
+    margin-right: 10px;
+  }
+
+  .icons {
+    gap: 15px;
+    margin-right: 10px;
+  }
+}
+
+@media (max-width: 576px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .appName {
+    margin-bottom: 10px;
+  }
+
+  .searchContainer {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .authLinks {
+    margin-right: 0;
+  }
+
+  .userProfile {
+    margin-right: 0;
+  }
+
+  .icons {
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 400px) {
+  .appName {
+    font-size: 1em;
+  }
+
+  .circle {
+    width: 30px;
+    height: 30px;
+  }
+
+  .circleInitials {
+    font-size: 16px;
+  }
+
+  .searchInput {
+    font-size: 14px;
+  }
+
+  .authLink,
+  .logoutButton {
+    padding: 5px;
+    font-size: 14px;
+  }
+}
