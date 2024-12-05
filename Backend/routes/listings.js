@@ -40,10 +40,11 @@ router.post(
       initialBid,
     } = req.body;
 
-    const price =
-      isAuction === "true"
-        ? parseFloat(initialBid)
-        : parseFloat(req.body.price);
+    const isAuctionListing = isAuction === "true";
+
+    const price = isAuctionListing
+      ? parseFloat(initialBid)
+      : parseFloat(req.body.price);
 
     if (isNaN(price)) {
       return res
@@ -54,10 +55,9 @@ router.post(
     const sellerId = req.user.id;
 
     try {
-      const auctionEndTime =
-        isAuction === "true"
-          ? new Date(new Date().setHours(23, 59, 59, 999))
-          : null;
+      const auctionEndTime = isAuctionListing
+        ? new Date(new Date().setHours(23, 59, 59, 999))
+        : null;
 
       const newListing = await prisma.listing.create({
         data: {
@@ -71,9 +71,9 @@ router.post(
           imageUrls,
           sellerId: parseInt(sellerId),
           status: "active",
-          isAuction: isAuction === "true",
-          initialBid: isAuction === "true" ? price : null,
-          currentBid: isAuction === "true" ? price : null,
+          isAuction: isAuctionListing,
+          initialBid: isAuctionListing ? price : null,
+          currentBid: isAuctionListing ? price : null,
           auctionEndTime: auctionEndTime,
         },
       });

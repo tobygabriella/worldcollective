@@ -19,6 +19,7 @@ export const SocketProvider = ({ children }) => {
   const [pendingNotificationsCount, setPendingNotificationsCount] = useState(0);
   const { startLoading, isLoading, stopLoading } = useLoading();
   const [isNotificationsLoaded, setIsNotificationsLoaded] = useState(false);
+  const [filterType, setFilterType] = useState("");
 
   const formatNotificationTimes = (notifications) => {
     return notifications.map((notif) => ({
@@ -119,7 +120,7 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on("connect", () => {
       if (!isNotificationsLoaded) {
-        fetchNotifications();
+        fetchNotifications(filterType).then(() => stopLoading());
       }
       fetchPendingCount();
     });
@@ -154,7 +155,7 @@ export const SocketProvider = ({ children }) => {
         newSocket.close();
       }
     };
-  }, []);
+  }, [filterType, isNotificationsLoaded]);
 
   const markAsRead = async (id) => {
     try {
@@ -194,6 +195,8 @@ export const SocketProvider = ({ children }) => {
         isNotificationsLoaded,
         handleLoadPendingNotifications,
         clearNotificationState,
+        setIsNotificationsLoaded,
+        setFilterType,
       }}
     >
       {isLoading && <Loading />}

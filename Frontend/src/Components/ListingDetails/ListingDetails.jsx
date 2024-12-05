@@ -145,10 +145,9 @@ const ListingDetails = () => {
           </p>
           {user?.id === listing.sellerId ? (
             <div className="listingActions">
-              {listing.isAuction && (
+              {listing.isAuction ? (
                 <button onClick={handlePlaceBid}>View All Bids</button>
-              )}
-              {!listing.isAuction && (
+              ) : (
                 <button onClick={handleDelete}>Delete Listing</button>
               )}
             </div>
